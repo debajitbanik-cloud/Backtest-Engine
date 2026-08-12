@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Command Center</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+  --bg-root: #0a0b0f;
+  --bg-surface: #111318;
+  --bg-elevated: #161820;
+  --bg-hover: #1c1e26;
+  --border-default: #22242c;
+  --border-active: #333540;
+  --text-primary: #e4e6ef;
+  --text-secondary: #8b8fa3;
+  --text-tertiary: #5a5e6f;
+  --accent-blue: #4e8cff;
+  --accent-green: #2ecc71;
+  --accent-red: #e74c3c;
+  --accent-amber: #f0a500;
+  --accent-purple: #9b59b6;
+  --accent-cyan: #00c8e8;
+  --ring-blue: rgba(78,140,255,0.3);
+  --ring-red: rgba(231,76,60,0.3);
+}
+* { box-sizing: border-box; margin: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', system-ui, sans-serif; background: var(--bg-root); color: var(--text-primary); overflow-x: hidden; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+::selection { background: var(--accent-blue); color: #fff; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,5002 @@
+[
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785459600000,
+    "open": 64724.92,
+    "high": 65409.56,
+    "low": 64724.92,
+    "close": 65189.32,
+    "volume": 563.95142
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785460500000,
+    "open": 65189.32,
+    "high": 65225.74,
+    "low": 65026.8,
+    "close": 65184.08,
+    "volume": 232.81466
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785461400000,
+    "open": 65184.09,
+    "high": 65184.09,
+    "low": 64824.58,
+    "close": 64824.61,
+    "volume": 183.98934
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785462300000,
+    "open": 64824.61,
+    "high": 64894,
+    "low": 64480.44,
+    "close": 64564.01,
+    "volume": 236.24734
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785463200000,
+    "open": 64564,
+    "high": 64614,
+    "low": 64467,
+    "close": 64484.93,
+    "volume": 142.84525
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785464100000,
+    "open": 64484.93,
+    "high": 64484.93,
+    "low": 64350,
+    "close": 64353.78,
+    "volume": 242.15649
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785465000000,
+    "open": 64353.78,
+    "high": 64417.66,
+    "low": 64203.58,
+    "close": 64230.56,
+    "volume": 293.69608
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785465900000,
+    "open": 64230.55,
+    "high": 64360,
+    "low": 64218.83,
+    "close": 64297.79,
+    "volume": 176.95994
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785466800000,
+    "open": 64297.79,
+    "high": 64297.79,
+    "low": 64172,
+    "close": 64258,
+    "volume": 137.77005
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785467700000,
+    "open": 64258,
+    "high": 64422,
+    "low": 64219.06,
+    "close": 64382.33,
+    "volume": 212.23356
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785468600000,
+    "open": 64382.34,
+    "high": 64416,
+    "low": 64298,
+    "close": 64385.31,
+    "volume": 85.80253
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785469500000,
+    "open": 64385.31,
+    "high": 64439.81,
+    "low": 64341.02,
+    "close": 64370,
+    "volume": 112.23949
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785470400000,
+    "open": 64370,
+    "high": 64438,
+    "low": 64350,
+    "close": 64370.01,
+    "volume": 154.22029
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785471300000,
+    "open": 64370.26,
+    "high": 64372,
+    "low": 64236,
+    "close": 64335.79,
+    "volume": 87.08885
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785472200000,
+    "open": 64335.8,
+    "high": 64369.75,
+    "low": 64288,
+    "close": 64307.99,
+    "volume": 67.45233
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785473100000,
+    "open": 64307.99,
+    "high": 64334,
+    "low": 64293.81,
+    "close": 64300,
+    "volume": 82.37284
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785474000000,
+    "open": 64299.99,
+    "high": 64420,
+    "low": 64299.99,
+    "close": 64415.71,
+    "volume": 163.27106
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785474900000,
+    "open": 64415.72,
+    "high": 64421.68,
+    "low": 64330,
+    "close": 64330.01,
+    "volume": 61.548
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785475800000,
+    "open": 64330.01,
+    "high": 64361.06,
+    "low": 64293.82,
+    "close": 64293.82,
+    "volume": 57.2877
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785476700000,
+    "open": 64293.82,
+    "high": 64380.05,
+    "low": 64268.47,
+    "close": 64363.06,
+    "volume": 247.29617
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785477600000,
+    "open": 64363.06,
+    "high": 64389.52,
+    "low": 64324.22,
+    "close": 64382.88,
+    "volume": 56.33717
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785478500000,
+    "open": 64382.87,
+    "high": 64458.89,
+    "low": 64364.68,
+    "close": 64458.89,
+    "volume": 113.41663
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785479400000,
+    "open": 64458.88,
+    "high": 64496.64,
+    "low": 64274,
+    "close": 64281.99,
+    "volume": 133.25275
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785480300000,
+    "open": 64282,
+    "high": 64282,
+    "low": 64196.08,
+    "close": 64231.97,
+    "volume": 200.76911
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785481200000,
+    "open": 64231.97,
+    "high": 64245.57,
+    "low": 64017.84,
+    "close": 64061.99,
+    "volume": 340.92179
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785482100000,
+    "open": 64062,
+    "high": 64096.75,
+    "low": 64000,
+    "close": 64000,
+    "volume": 673.68252
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785483000000,
+    "open": 64000.01,
+    "high": 64034.06,
+    "low": 63878.11,
+    "close": 63923,
+    "volume": 1696.21577
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785483900000,
+    "open": 63923.01,
+    "high": 64019.9,
+    "low": 63923,
+    "close": 63950.01,
+    "volume": 378.13643
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785484800000,
+    "open": 63950.01,
+    "high": 63970.56,
+    "low": 63862,
+    "close": 63945.57,
+    "volume": 253.5867
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785485700000,
+    "open": 63945.57,
+    "high": 63987.36,
+    "low": 63865.09,
+    "close": 63962,
+    "volume": 131.08576
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785486600000,
+    "open": 63961.99,
+    "high": 63961.99,
+    "low": 63816.62,
+    "close": 63850.05,
+    "volume": 146.83166
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785487500000,
+    "open": 63850.05,
+    "high": 63904.65,
+    "low": 63784.67,
+    "close": 63834.01,
+    "volume": 202.68306
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785488400000,
+    "open": 63834.01,
+    "high": 63847.13,
+    "low": 63756,
+    "close": 63804.84,
+    "volume": 193.4138
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785489300000,
+    "open": 63804.83,
+    "high": 63804.84,
+    "low": 63694.73,
+    "close": 63694.74,
+    "volume": 90.89596
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785490200000,
+    "open": 63694.74,
+    "high": 63728.38,
+    "low": 63638.18,
+    "close": 63692,
+    "volume": 182.91632
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785491100000,
+    "open": 63692,
+    "high": 63749.99,
+    "low": 63680.01,
+    "close": 63715.9,
+    "volume": 95.10418
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785492000000,
+    "open": 63715.91,
+    "high": 63743.85,
+    "low": 63610,
+    "close": 63734.21,
+    "volume": 98.562
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785492900000,
+    "open": 63734.22,
+    "high": 63827.58,
+    "low": 63700.56,
+    "close": 63824.88,
+    "volume": 126.19256
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785493800000,
+    "open": 63824.88,
+    "high": 63906.99,
+    "low": 63824.87,
+    "close": 63903.01,
+    "volume": 126.75745
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785494700000,
+    "open": 63903.01,
+    "high": 63951.77,
+    "low": 63876,
+    "close": 63918.67,
+    "volume": 70.87857
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785495600000,
+    "open": 63918.68,
+    "high": 64011.99,
+    "low": 63905.75,
+    "close": 63905.76,
+    "volume": 82.87111
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785496500000,
+    "open": 63905.75,
+    "high": 63975.86,
+    "low": 63862,
+    "close": 63902,
+    "volume": 80.61858
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785497400000,
+    "open": 63902.01,
+    "high": 63902.01,
+    "low": 63844.44,
+    "close": 63844.61,
+    "volume": 61.8548
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785498300000,
+    "open": 63844.61,
+    "high": 63856,
+    "low": 63792.01,
+    "close": 63805.51,
+    "volume": 61.80155
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785499200000,
+    "open": 63805.5,
+    "high": 63830.62,
+    "low": 63706,
+    "close": 63727.66,
+    "volume": 105.03737
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785500100000,
+    "open": 63727.66,
+    "high": 63774,
+    "low": 63704,
+    "close": 63746.63,
+    "volume": 119.3275
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785501000000,
+    "open": 63746.63,
+    "high": 63746.63,
+    "low": 63627.66,
+    "close": 63667.52,
+    "volume": 219.25849
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785501900000,
+    "open": 63667.51,
+    "high": 63763.06,
+    "low": 63660,
+    "close": 63754.01,
+    "volume": 72.63492
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785502800000,
+    "open": 63754.01,
+    "high": 63784,
+    "low": 63720,
+    "close": 63765.99,
+    "volume": 110.24632
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785503700000,
+    "open": 63766,
+    "high": 63849.19,
+    "low": 63759.74,
+    "close": 63825.52,
+    "volume": 303.91732
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785504600000,
+    "open": 63825.52,
+    "high": 63825.52,
+    "low": 63465.57,
+    "close": 63465.57,
+    "volume": 626.41027
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785505500000,
+    "open": 63465.57,
+    "high": 63529.99,
+    "low": 63241.71,
+    "close": 63270.73,
+    "volume": 470.96143
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785506400000,
+    "open": 63270.72,
+    "high": 63310,
+    "low": 62466,
+    "close": 62697.02,
+    "volume": 1608.05582
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785507300000,
+    "open": 62697.02,
+    "high": 62748,
+    "low": 62520,
+    "close": 62642.15,
+    "volume": 980.23353
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785508200000,
+    "open": 62642.23,
+    "high": 62818,
+    "low": 62600,
+    "close": 62684,
+    "volume": 521.90901
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785509100000,
+    "open": 62684,
+    "high": 62809.91,
+    "low": 62592.32,
+    "close": 62682.06,
+    "volume": 518.20593
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785510000000,
+    "open": 62682.05,
+    "high": 62706,
+    "low": 62555,
+    "close": 62616.01,
+    "volume": 265.87917
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785510900000,
+    "open": 62616.01,
+    "high": 62721.93,
+    "low": 62490.24,
+    "close": 62584,
+    "volume": 312.46923
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785511800000,
+    "open": 62583.99,
+    "high": 62769.36,
+    "low": 62568,
+    "close": 62761.41,
+    "volume": 226.09997
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785512700000,
+    "open": 62761.41,
+    "high": 62761.41,
+    "low": 62633.32,
+    "close": 62716.57,
+    "volume": 161.5072
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785513600000,
+    "open": 62716.57,
+    "high": 62905.79,
+    "low": 62709.01,
+    "close": 62864.07,
+    "volume": 288.66321
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785514500000,
+    "open": 62864.07,
+    "high": 62931.79,
+    "low": 62793.27,
+    "close": 62921.52,
+    "volume": 311.56574
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785515400000,
+    "open": 62921.51,
+    "high": 62921.52,
+    "low": 62808,
+    "close": 62847.54,
+    "volume": 141.24985
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785516300000,
+    "open": 62847.54,
+    "high": 62885.01,
+    "low": 62815.42,
+    "close": 62870.88,
+    "volume": 115.76923
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785517200000,
+    "open": 62870.87,
+    "high": 62924,
+    "low": 62800,
+    "close": 62902,
+    "volume": 181.28667
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785518100000,
+    "open": 62901.99,
+    "high": 63006.84,
+    "low": 62871.63,
+    "close": 62976.74,
+    "volume": 181.04233
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785519000000,
+    "open": 62976.73,
+    "high": 63100,
+    "low": 62956.95,
+    "close": 63059.69,
+    "volume": 173.61216
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785519900000,
+    "open": 63059.69,
+    "high": 63301.68,
+    "low": 63059.68,
+    "close": 63245.44,
+    "volume": 320.78822
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785520800000,
+    "open": 63245.44,
+    "high": 63302,
+    "low": 63135.31,
+    "close": 63147.9,
+    "volume": 220.86973
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785521700000,
+    "open": 63147.9,
+    "high": 63182,
+    "low": 63056,
+    "close": 63061.57,
+    "volume": 225.43697
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785522600000,
+    "open": 63061.56,
+    "high": 63094.7,
+    "low": 62966,
+    "close": 63037.75,
+    "volume": 178.41539
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785523500000,
+    "open": 63037.75,
+    "high": 63176.46,
+    "low": 63033.94,
+    "close": 63097.57,
+    "volume": 128.73455
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785524400000,
+    "open": 63097.57,
+    "high": 63158,
+    "low": 63029.37,
+    "close": 63068.93,
+    "volume": 60.90224
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785525300000,
+    "open": 63068.93,
+    "high": 63072,
+    "low": 63017.99,
+    "close": 63022.02,
+    "volume": 43.03145
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785526200000,
+    "open": 63022.02,
+    "high": 63027.6,
+    "low": 62936.29,
+    "close": 63000.44,
+    "volume": 79.18753
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785527100000,
+    "open": 63000.45,
+    "high": 63052,
+    "low": 62954.03,
+    "close": 62972,
+    "volume": 121.76794
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785528000000,
+    "open": 62972,
+    "high": 63005.47,
+    "low": 62944.84,
+    "close": 62999.34,
+    "volume": 66.7393
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785528900000,
+    "open": 62999.33,
+    "high": 63034,
+    "low": 62982,
+    "close": 63005.52,
+    "volume": 55.1624
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785529800000,
+    "open": 63005.52,
+    "high": 63013.99,
+    "low": 62955,
+    "close": 62990.59,
+    "volume": 102.50625
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785530700000,
+    "open": 62990.58,
+    "high": 63003.87,
+    "low": 62928.35,
+    "close": 62953.7,
+    "volume": 94.01232
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785531600000,
+    "open": 62953.7,
+    "high": 63013.23,
+    "low": 62846,
+    "close": 63010.83,
+    "volume": 60.38708
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785532500000,
+    "open": 63010.83,
+    "high": 63038,
+    "low": 63000,
+    "close": 63009.99,
+    "volume": 84.53869
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785533400000,
+    "open": 63010,
+    "high": 63038.46,
+    "low": 62995.08,
+    "close": 63038.46,
+    "volume": 94.66788
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785534300000,
+    "open": 63038.45,
+    "high": 63062.47,
+    "low": 62923.84,
+    "close": 62947.78,
+    "volume": 95.1662
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785535200000,
+    "open": 62947.77,
+    "high": 63020,
+    "low": 62870.01,
+    "close": 63002.47,
+    "volume": 75.7994
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785536100000,
+    "open": 63002.47,
+    "high": 63020,
+    "low": 62988.29,
+    "close": 62988.29,
+    "volume": 133.54064
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785537000000,
+    "open": 62988.28,
+    "high": 63006.14,
+    "low": 62922.17,
+    "close": 62943.64,
+    "volume": 102.78499
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785537900000,
+    "open": 62943.64,
+    "high": 62963.22,
+    "low": 62915,
+    "close": 62950,
+    "volume": 128.86991
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785538800000,
+    "open": 62950.01,
+    "high": 63004,
+    "low": 62950,
+    "close": 62975.77,
+    "volume": 73.02156
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785539700000,
+    "open": 62975.78,
+    "high": 63013.52,
+    "low": 62975.77,
+    "close": 62983.86,
+    "volume": 23.36606
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785540600000,
+    "open": 62983.86,
+    "high": 62996.73,
+    "low": 62950,
+    "close": 62950.01,
+    "volume": 33.58295
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785541500000,
+    "open": 62950,
+    "high": 62950.01,
+    "low": 62860.64,
+    "close": 62887.88,
+    "volume": 56.52402
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785542400000,
+    "open": 62887.88,
+    "high": 62970,
+    "low": 62887.87,
+    "close": 62942,
+    "volume": 182.20936
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785543300000,
+    "open": 62942,
+    "high": 62998,
+    "low": 62935,
+    "close": 62958,
+    "volume": 171.41681
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785544200000,
+    "open": 62958,
+    "high": 62996,
+    "low": 62936.03,
+    "close": 62995.99,
+    "volume": 119.33373
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785545100000,
+    "open": 62996,
+    "high": 63024.04,
+    "low": 62938,
+    "close": 62938.01,
+    "volume": 44.30907
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785546000000,
+    "open": 62938.01,
+    "high": 62967.34,
+    "low": 62938,
+    "close": 62967.34,
+    "volume": 69.12506
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785546900000,
+    "open": 62967.34,
+    "high": 62990,
+    "low": 62923.47,
+    "close": 62954.27,
+    "volume": 173.96706
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785547800000,
+    "open": 62954.27,
+    "high": 62981.35,
+    "low": 62930,
+    "close": 62975.52,
+    "volume": 73.12879
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785548700000,
+    "open": 62975.51,
+    "high": 62983.2,
+    "low": 62950.68,
+    "close": 62975.01,
+    "volume": 70.49894
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785549600000,
+    "open": 62975,
+    "high": 63028,
+    "low": 62975,
+    "close": 63018,
+    "volume": 33.58196
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785550500000,
+    "open": 63018.01,
+    "high": 63087.82,
+    "low": 63018,
+    "close": 63070.01,
+    "volume": 46.90805
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785551400000,
+    "open": 63070.01,
+    "high": 63098.8,
+    "low": 63070,
+    "close": 63085.01,
+    "volume": 107.79432
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785552300000,
+    "open": 63085,
+    "high": 63106.55,
+    "low": 63056.15,
+    "close": 63075.07,
+    "volume": 160.38649
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785553200000,
+    "open": 63075.08,
+    "high": 63075.08,
+    "low": 62987.35,
+    "close": 62987.36,
+    "volume": 50.01728
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785554100000,
+    "open": 62987.36,
+    "high": 63050,
+    "low": 62970.65,
+    "close": 63018.77,
+    "volume": 45.00068
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785555000000,
+    "open": 63018.77,
+    "high": 63030.95,
+    "low": 62976,
+    "close": 62997.75,
+    "volume": 190.52824
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785555900000,
+    "open": 62997.75,
+    "high": 63018.64,
+    "low": 62982,
+    "close": 63004.48,
+    "volume": 103.40962
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785556800000,
+    "open": 63004.47,
+    "high": 63014,
+    "low": 62993.2,
+    "close": 63013.99,
+    "volume": 49.64273
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785557700000,
+    "open": 63014,
+    "high": 63050.1,
+    "low": 63013.99,
+    "close": 63050.1,
+    "volume": 33.80606
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785558600000,
+    "open": 63050.1,
+    "high": 63069.45,
+    "low": 63046,
+    "close": 63069.45,
+    "volume": 35.05172
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785559500000,
+    "open": 63069.45,
+    "high": 63115.37,
+    "low": 63069.44,
+    "close": 63115.01,
+    "volume": 105.4289
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785560400000,
+    "open": 63115,
+    "high": 63142.85,
+    "low": 63059.21,
+    "close": 63122.9,
+    "volume": 134.69423
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785561300000,
+    "open": 63122.91,
+    "high": 63122.91,
+    "low": 63074.41,
+    "close": 63105,
+    "volume": 92.79342
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785562200000,
+    "open": 63105,
+    "high": 63105.01,
+    "low": 63014.76,
+    "close": 63016.58,
+    "volume": 116.75046
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785563100000,
+    "open": 63016.58,
+    "high": 63038,
+    "low": 63000.85,
+    "close": 63020,
+    "volume": 114.0386
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785564000000,
+    "open": 63020,
+    "high": 63040.1,
+    "low": 62992.82,
+    "close": 63027.88,
+    "volume": 171.47143
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785564900000,
+    "open": 63027.87,
+    "high": 63075.1,
+    "low": 63007.8,
+    "close": 63060,
+    "volume": 48.22198
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785565800000,
+    "open": 63059.99,
+    "high": 63076.93,
+    "low": 63059.99,
+    "close": 63062,
+    "volume": 107.93033
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785566700000,
+    "open": 63061.99,
+    "high": 63086.65,
+    "low": 63057.44,
+    "close": 63080.64,
+    "volume": 107.25103
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785567600000,
+    "open": 63080.65,
+    "high": 63110.89,
+    "low": 63080.64,
+    "close": 63110.88,
+    "volume": 29.9517
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785568500000,
+    "open": 63110.88,
+    "high": 63110.89,
+    "low": 63069.74,
+    "close": 63069.75,
+    "volume": 33.27632
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785569400000,
+    "open": 63069.74,
+    "high": 63069.75,
+    "low": 63034,
+    "close": 63046,
+    "volume": 55.71305
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785570300000,
+    "open": 63046,
+    "high": 63056.77,
+    "low": 63046,
+    "close": 63050.46,
+    "volume": 31.75066
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785571200000,
+    "open": 63050.45,
+    "high": 63100.01,
+    "low": 63050.45,
+    "close": 63100.01,
+    "volume": 30.67437
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785572100000,
+    "open": 63100.01,
+    "high": 63102.51,
+    "low": 63092,
+    "close": 63092.01,
+    "volume": 19.93275
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785573000000,
+    "open": 63092.01,
+    "high": 63109.04,
+    "low": 63092,
+    "close": 63102.51,
+    "volume": 21.91553
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785573900000,
+    "open": 63102.51,
+    "high": 63150,
+    "low": 63091.33,
+    "close": 63126.25,
+    "volume": 33.50552
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785574800000,
+    "open": 63126.25,
+    "high": 63139.54,
+    "low": 63110,
+    "close": 63112.08,
+    "volume": 59.74674
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785575700000,
+    "open": 63112.08,
+    "high": 63125.48,
+    "low": 63100,
+    "close": 63112.94,
+    "volume": 66.80092
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785576600000,
+    "open": 63112.93,
+    "high": 63112.94,
+    "low": 63100,
+    "close": 63107.91,
+    "volume": 41.64028
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785577500000,
+    "open": 63107.91,
+    "high": 63107.91,
+    "low": 63046.33,
+    "close": 63053.17,
+    "volume": 60.26358
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785578400000,
+    "open": 63053.17,
+    "high": 63111.09,
+    "low": 62986.31,
+    "close": 63006.44,
+    "volume": 81.0008
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785579300000,
+    "open": 63006.45,
+    "high": 63066.22,
+    "low": 62990.25,
+    "close": 63046.8,
+    "volume": 33.91335
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785580200000,
+    "open": 63046.8,
+    "high": 63076,
+    "low": 63022.58,
+    "close": 63058.56,
+    "volume": 156.95472
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785581100000,
+    "open": 63058.56,
+    "high": 63063.68,
+    "low": 63038.24,
+    "close": 63056,
+    "volume": 49.17462
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785582000000,
+    "open": 63055.99,
+    "high": 63061.59,
+    "low": 63038.11,
+    "close": 63061.59,
+    "volume": 30.4592
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785582900000,
+    "open": 63061.58,
+    "high": 63082,
+    "low": 63037.72,
+    "close": 63081.91,
+    "volume": 68.11591
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785583800000,
+    "open": 63081.91,
+    "high": 63091.97,
+    "low": 63070.52,
+    "close": 63070.52,
+    "volume": 55.51877
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785584700000,
+    "open": 63070.52,
+    "high": 63076.01,
+    "low": 63070.52,
+    "close": 63076,
+    "volume": 24.99206
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785585600000,
+    "open": 63076,
+    "high": 63119.4,
+    "low": 63076,
+    "close": 63099.83,
+    "volume": 74.85659
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785586500000,
+    "open": 63099.84,
+    "high": 63105.99,
+    "low": 63092.87,
+    "close": 63092.87,
+    "volume": 53.66513
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785587400000,
+    "open": 63092.88,
+    "high": 63103.37,
+    "low": 63081.81,
+    "close": 63100.04,
+    "volume": 128.48021
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785588300000,
+    "open": 63100.03,
+    "high": 63106.96,
+    "low": 63100.03,
+    "close": 63103.68,
+    "volume": 63.18439
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785589200000,
+    "open": 63103.68,
+    "high": 63106.83,
+    "low": 63096.81,
+    "close": 63102.59,
+    "volume": 43.90302
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785590100000,
+    "open": 63102.59,
+    "high": 63102.59,
+    "low": 63083.62,
+    "close": 63083.62,
+    "volume": 56.61335
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785591000000,
+    "open": 63083.62,
+    "high": 63094,
+    "low": 63080,
+    "close": 63080.01,
+    "volume": 33.8357
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785591900000,
+    "open": 63080,
+    "high": 63080.01,
+    "low": 63051,
+    "close": 63069.32,
+    "volume": 53.11671
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785592800000,
+    "open": 63069.31,
+    "high": 63127.07,
+    "low": 63069.31,
+    "close": 63079.83,
+    "volume": 94.96288
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785593700000,
+    "open": 63079.83,
+    "high": 63120.53,
+    "low": 63072.41,
+    "close": 63114.36,
+    "volume": 52.6494
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785594600000,
+    "open": 63114.35,
+    "high": 63120.01,
+    "low": 63087.33,
+    "close": 63110.01,
+    "volume": 85.68172
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785595500000,
+    "open": 63110,
+    "high": 63126.53,
+    "low": 63073.08,
+    "close": 63126.52,
+    "volume": 152.49935
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785596400000,
+    "open": 63126.53,
+    "high": 63126.53,
+    "low": 63110,
+    "close": 63110,
+    "volume": 55.65858
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785597300000,
+    "open": 63110,
+    "high": 63110.01,
+    "low": 63059.99,
+    "close": 63060,
+    "volume": 29.38835
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785598200000,
+    "open": 63060,
+    "high": 63061.99,
+    "low": 63051,
+    "close": 63051.07,
+    "volume": 41.49905
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785599100000,
+    "open": 63051.07,
+    "high": 63051.07,
+    "low": 63007.05,
+    "close": 63007.06,
+    "volume": 37.87935
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785600000000,
+    "open": 63007.06,
+    "high": 63007.06,
+    "low": 62928,
+    "close": 62948.27,
+    "volume": 97.32085
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785600900000,
+    "open": 62948.27,
+    "high": 62964,
+    "low": 62926.76,
+    "close": 62948.67,
+    "volume": 57.4869
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785601800000,
+    "open": 62948.67,
+    "high": 63027.65,
+    "low": 62947.99,
+    "close": 62969.25,
+    "volume": 112.11283
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785602700000,
+    "open": 62969.24,
+    "high": 62969.25,
+    "low": 62874,
+    "close": 62932.32,
+    "volume": 60.95124
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785603600000,
+    "open": 62932.32,
+    "high": 62996,
+    "low": 62870,
+    "close": 62897.99,
+    "volume": 86.32257
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785604500000,
+    "open": 62897.99,
+    "high": 62898,
+    "low": 62800,
+    "close": 62833.95,
+    "volume": 75.07065
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785605400000,
+    "open": 62833.95,
+    "high": 62844.78,
+    "low": 62740,
+    "close": 62818.02,
+    "volume": 91.69905
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785606300000,
+    "open": 62818.02,
+    "high": 62818.03,
+    "low": 62666,
+    "close": 62708.07,
+    "volume": 106.0829
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785607200000,
+    "open": 62708.06,
+    "high": 62734,
+    "low": 62618.75,
+    "close": 62706.84,
+    "volume": 169.72237
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785608100000,
+    "open": 62706.85,
+    "high": 62706.85,
+    "low": 62510,
+    "close": 62564.78,
+    "volume": 183.87011
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785609000000,
+    "open": 62564.78,
+    "high": 62564.78,
+    "low": 62275,
+    "close": 62370.01,
+    "volume": 414.86265
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785609900000,
+    "open": 62370.01,
+    "high": 62586,
+    "low": 62280.16,
+    "close": 62580.56,
+    "volume": 162.97384
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785610800000,
+    "open": 62580.55,
+    "high": 62624,
+    "low": 62526.33,
+    "close": 62550,
+    "volume": 99.33353
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785611700000,
+    "open": 62550,
+    "high": 62611.06,
+    "low": 62491.11,
+    "close": 62548.45,
+    "volume": 123.19365
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785612600000,
+    "open": 62548.45,
+    "high": 62589.99,
+    "low": 62461.17,
+    "close": 62471.99,
+    "volume": 47.92329
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785613500000,
+    "open": 62472,
+    "high": 62543.86,
+    "low": 62471.99,
+    "close": 62529.82,
+    "volume": 42.07579
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785614400000,
+    "open": 62529.81,
+    "high": 62571.7,
+    "low": 62482.99,
+    "close": 62558,
+    "volume": 38.80349
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785615300000,
+    "open": 62558,
+    "high": 62640,
+    "low": 62558,
+    "close": 62618,
+    "volume": 52.53567
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785616200000,
+    "open": 62617.99,
+    "high": 62624,
+    "low": 62562,
+    "close": 62596,
+    "volume": 35.20714
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785617100000,
+    "open": 62595.99,
+    "high": 62674.98,
+    "low": 62588.1,
+    "close": 62662.13,
+    "volume": 56.92336
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785618000000,
+    "open": 62662.14,
+    "high": 62800,
+    "low": 62662.13,
+    "close": 62743.16,
+    "volume": 103.38051
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785618900000,
+    "open": 62743.17,
+    "high": 62796.86,
+    "low": 62743.16,
+    "close": 62793.21,
+    "volume": 32.86012
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785619800000,
+    "open": 62793.21,
+    "high": 62864,
+    "low": 62769.02,
+    "close": 62800.45,
+    "volume": 53.65072
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785620700000,
+    "open": 62800.44,
+    "high": 62827.08,
+    "low": 62781.77,
+    "close": 62812.75,
+    "volume": 39.49251
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785621600000,
+    "open": 62812.76,
+    "high": 62863.26,
+    "low": 62794.17,
+    "close": 62849.18,
+    "volume": 43.27042
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785622500000,
+    "open": 62849.18,
+    "high": 62866.62,
+    "low": 62826.08,
+    "close": 62854.79,
+    "volume": 31.51373
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785623400000,
+    "open": 62854.8,
+    "high": 62854.8,
+    "low": 62824.57,
+    "close": 62848.01,
+    "volume": 25.49231
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785624300000,
+    "open": 62848.01,
+    "high": 62852,
+    "low": 62831.28,
+    "close": 62831.28,
+    "volume": 29.27271
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785625200000,
+    "open": 62831.29,
+    "high": 62854,
+    "low": 62807.69,
+    "close": 62807.69,
+    "volume": 24.66705
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785626100000,
+    "open": 62807.7,
+    "high": 62807.7,
+    "low": 62769.97,
+    "close": 62771.35,
+    "volume": 41.99995
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785627000000,
+    "open": 62771.35,
+    "high": 62862.8,
+    "low": 62771.34,
+    "close": 62835.15,
+    "volume": 196.55736
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785627900000,
+    "open": 62835.14,
+    "high": 62840.82,
+    "low": 62815.94,
+    "close": 62823.64,
+    "volume": 24.58879
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785628800000,
+    "open": 62823.65,
+    "high": 62979.99,
+    "low": 62823.64,
+    "close": 62929.75,
+    "volume": 121.75471
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785629700000,
+    "open": 62929.75,
+    "high": 62940,
+    "low": 62882.01,
+    "close": 62883.7,
+    "volume": 60.54186
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785630600000,
+    "open": 62883.69,
+    "high": 62914.71,
+    "low": 62846.96,
+    "close": 62846.97,
+    "volume": 150.33788
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785631500000,
+    "open": 62846.97,
+    "high": 62861.42,
+    "low": 62806.58,
+    "close": 62833.99,
+    "volume": 64.63979
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785632400000,
+    "open": 62834,
+    "high": 63021.96,
+    "low": 62834,
+    "close": 63012.17,
+    "volume": 73.76266
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785633300000,
+    "open": 63012.18,
+    "high": 63088,
+    "low": 62975.3,
+    "close": 62984,
+    "volume": 80.09109
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785634200000,
+    "open": 62984,
+    "high": 63020.87,
+    "low": 62975.3,
+    "close": 63015.99,
+    "volume": 30.57099
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785635100000,
+    "open": 63016,
+    "high": 63016,
+    "low": 62981.86,
+    "close": 62981.87,
+    "volume": 31.3522
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785636000000,
+    "open": 62981.87,
+    "high": 63547.7,
+    "low": 62958.54,
+    "close": 63459.99,
+    "volume": 434.92474
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785636900000,
+    "open": 63460,
+    "high": 63547.7,
+    "low": 63393.57,
+    "close": 63405.47,
+    "volume": 304.37265
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785637800000,
+    "open": 63405.47,
+    "high": 63460.22,
+    "low": 63333.99,
+    "close": 63385.12,
+    "volume": 227.60772
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785638700000,
+    "open": 63385.12,
+    "high": 63484,
+    "low": 63348,
+    "close": 63451.58,
+    "volume": 101.51395
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785639600000,
+    "open": 63451.58,
+    "high": 63461.09,
+    "low": 63386.87,
+    "close": 63415.48,
+    "volume": 130.84429
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785640500000,
+    "open": 63415.48,
+    "high": 63550,
+    "low": 63380,
+    "close": 63436.88,
+    "volume": 122.20468
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785641400000,
+    "open": 63436.88,
+    "high": 63498,
+    "low": 63436.88,
+    "close": 63497.99,
+    "volume": 63.65554
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785642300000,
+    "open": 63497.99,
+    "high": 63515.56,
+    "low": 63435.38,
+    "close": 63461.95,
+    "volume": 71.85011
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785643200000,
+    "open": 63461.95,
+    "high": 63555,
+    "low": 63461.95,
+    "close": 63543.17,
+    "volume": 88.78303
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785644100000,
+    "open": 63543.16,
+    "high": 63558.34,
+    "low": 63515.86,
+    "close": 63546,
+    "volume": 38.07443
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785645000000,
+    "open": 63546.01,
+    "high": 63556.03,
+    "low": 63523.34,
+    "close": 63526.6,
+    "volume": 92.73492
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785645900000,
+    "open": 63526.6,
+    "high": 63612,
+    "low": 63526.59,
+    "close": 63590,
+    "volume": 82.77879
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785646800000,
+    "open": 63590,
+    "high": 63634,
+    "low": 63464.07,
+    "close": 63482.74,
+    "volume": 82.59301
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785647700000,
+    "open": 63482.74,
+    "high": 63496,
+    "low": 63456.96,
+    "close": 63494.83,
+    "volume": 52.58672
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785648600000,
+    "open": 63494.83,
+    "high": 63494.83,
+    "low": 63415.26,
+    "close": 63423.76,
+    "volume": 95.17288
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785649500000,
+    "open": 63423.77,
+    "high": 63454.81,
+    "low": 63423.76,
+    "close": 63453.27,
+    "volume": 30.96301
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785650400000,
+    "open": 63453.27,
+    "high": 63484.62,
+    "low": 63449.34,
+    "close": 63449.35,
+    "volume": 41.28177
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785651300000,
+    "open": 63449.34,
+    "high": 63498,
+    "low": 63435.99,
+    "close": 63497.99,
+    "volume": 31.62524
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785652200000,
+    "open": 63497.99,
+    "high": 63498.15,
+    "low": 63465.04,
+    "close": 63498.15,
+    "volume": 37.47394
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785653100000,
+    "open": 63498.15,
+    "high": 63498.15,
+    "low": 63482.48,
+    "close": 63482.49,
+    "volume": 50.0179
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785654000000,
+    "open": 63482.49,
+    "high": 63492.37,
+    "low": 63480,
+    "close": 63488.36,
+    "volume": 29.36486
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785654900000,
+    "open": 63488.36,
+    "high": 63493.97,
+    "low": 63482.93,
+    "close": 63493.83,
+    "volume": 113.71427
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785655800000,
+    "open": 63493.83,
+    "high": 63544.51,
+    "low": 63491.74,
+    "close": 63538.12,
+    "volume": 141.00585
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785656700000,
+    "open": 63538.11,
+    "high": 63538.12,
+    "low": 63483.76,
+    "close": 63506.24,
+    "volume": 128.0276
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785657600000,
+    "open": 63506.23,
+    "high": 63530,
+    "low": 63488.76,
+    "close": 63494.93,
+    "volume": 128.71806
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785658500000,
+    "open": 63494.93,
+    "high": 63495.13,
+    "low": 63386.72,
+    "close": 63390.95,
+    "volume": 222.13983
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785659400000,
+    "open": 63390.96,
+    "high": 63390.96,
+    "low": 63210.69,
+    "close": 63228.06,
+    "volume": 126.57619
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785660300000,
+    "open": 63228.06,
+    "high": 63236,
+    "low": 63172,
+    "close": 63193.99,
+    "volume": 65.36378
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785661200000,
+    "open": 63194,
+    "high": 63282,
+    "low": 63094,
+    "close": 63262.18,
+    "volume": 110.70747
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785662100000,
+    "open": 63262.18,
+    "high": 63308.79,
+    "low": 63235,
+    "close": 63236,
+    "volume": 54.86698
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785663000000,
+    "open": 63236,
+    "high": 63320,
+    "low": 63234,
+    "close": 63267.01,
+    "volume": 40.80829
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785663900000,
+    "open": 63267,
+    "high": 63277,
+    "low": 63255.17,
+    "close": 63273.94,
+    "volume": 70.72867
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785664800000,
+    "open": 63273.94,
+    "high": 63273.94,
+    "low": 63208.01,
+    "close": 63208.99,
+    "volume": 69.72102
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785665700000,
+    "open": 63208.98,
+    "high": 63270,
+    "low": 63125.06,
+    "close": 63140,
+    "volume": 72.60259
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785666600000,
+    "open": 63140,
+    "high": 63213.99,
+    "low": 63140,
+    "close": 63202.02,
+    "volume": 33.40637
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785667500000,
+    "open": 63202.02,
+    "high": 63205.89,
+    "low": 63197,
+    "close": 63205.03,
+    "volume": 24.54512
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785668400000,
+    "open": 63205.03,
+    "high": 63205.03,
+    "low": 63134.07,
+    "close": 63164.7,
+    "volume": 59.80997
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785669300000,
+    "open": 63164.7,
+    "high": 63206,
+    "low": 63122,
+    "close": 63160.01,
+    "volume": 106.74008
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785670200000,
+    "open": 63160,
+    "high": 63184,
+    "low": 63100,
+    "close": 63116,
+    "volume": 60.6133
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785671100000,
+    "open": 63116,
+    "high": 63170,
+    "low": 62982.38,
+    "close": 63031.99,
+    "volume": 145.89814
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785672000000,
+    "open": 63031.99,
+    "high": 63180,
+    "low": 63031.99,
+    "close": 63177.9,
+    "volume": 54.31846
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785672900000,
+    "open": 63177.9,
+    "high": 63231.67,
+    "low": 63152,
+    "close": 63186,
+    "volume": 57.94792
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785673800000,
+    "open": 63186.01,
+    "high": 63212,
+    "low": 63107.7,
+    "close": 63146,
+    "volume": 74.4037
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785674700000,
+    "open": 63145.99,
+    "high": 63159.41,
+    "low": 63116,
+    "close": 63125.49,
+    "volume": 61.32855
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785675600000,
+    "open": 63125.49,
+    "high": 63146.89,
+    "low": 63095,
+    "close": 63114.02,
+    "volume": 67.40748
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785676500000,
+    "open": 63114.02,
+    "high": 63115.38,
+    "low": 63058,
+    "close": 63081.91,
+    "volume": 91.55059
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785677400000,
+    "open": 63081.91,
+    "high": 63107,
+    "low": 63010,
+    "close": 63093.05,
+    "volume": 59.3454
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785678300000,
+    "open": 63093.05,
+    "high": 63135.11,
+    "low": 63093.05,
+    "close": 63126.92,
+    "volume": 43.82478
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785679200000,
+    "open": 63126.92,
+    "high": 63126.93,
+    "low": 63062,
+    "close": 63089.08,
+    "volume": 53.18162
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785680100000,
+    "open": 63089.07,
+    "high": 63155,
+    "low": 63089.07,
+    "close": 63128.98,
+    "volume": 68.39222
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785681000000,
+    "open": 63128.97,
+    "high": 63186,
+    "low": 63096.42,
+    "close": 63156.54,
+    "volume": 149.27731
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785681900000,
+    "open": 63156.54,
+    "high": 63156.54,
+    "low": 63066.31,
+    "close": 63069.37,
+    "volume": 43.37797
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785682800000,
+    "open": 63069.37,
+    "high": 63124,
+    "low": 63050,
+    "close": 63124,
+    "volume": 52.60032
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785683700000,
+    "open": 63124,
+    "high": 63136.99,
+    "low": 63102.03,
+    "close": 63126,
+    "volume": 67.76274
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785684600000,
+    "open": 63125.99,
+    "high": 63186,
+    "low": 63125.99,
+    "close": 63149.99,
+    "volume": 36.14955
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785685500000,
+    "open": 63149.99,
+    "high": 63150,
+    "low": 63109.13,
+    "close": 63109.14,
+    "volume": 34.54071
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785686400000,
+    "open": 63109.13,
+    "high": 63135.96,
+    "low": 63064.01,
+    "close": 63104,
+    "volume": 56.85013
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785687300000,
+    "open": 63104,
+    "high": 63132,
+    "low": 63078,
+    "close": 63110,
+    "volume": 42.49179
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785688200000,
+    "open": 63110,
+    "high": 63273.49,
+    "low": 63103.76,
+    "close": 63222.01,
+    "volume": 116.74365
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785689100000,
+    "open": 63222.01,
+    "high": 63232,
+    "low": 63180.36,
+    "close": 63180.36,
+    "volume": 51.87804
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785690000000,
+    "open": 63180.36,
+    "high": 63219.86,
+    "low": 63152,
+    "close": 63210,
+    "volume": 65.60527
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785690900000,
+    "open": 63210,
+    "high": 63342,
+    "low": 63192.37,
+    "close": 63282.53,
+    "volume": 74.52925
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785691800000,
+    "open": 63282.53,
+    "high": 63326,
+    "low": 63282.53,
+    "close": 63326,
+    "volume": 100.81966
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785692700000,
+    "open": 63325.99,
+    "high": 63332.71,
+    "low": 63300.28,
+    "close": 63300.28,
+    "volume": 77.43759
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785693600000,
+    "open": 63300,
+    "high": 63328.9,
+    "low": 63292.12,
+    "close": 63312.66,
+    "volume": 69.4224
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785694500000,
+    "open": 63312.66,
+    "high": 63327.67,
+    "low": 63290,
+    "close": 63290,
+    "volume": 58.80797
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785695400000,
+    "open": 63290,
+    "high": 63610.01,
+    "low": 63290,
+    "close": 63502.01,
+    "volume": 260.5737
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785696300000,
+    "open": 63502.01,
+    "high": 63512,
+    "low": 63370.01,
+    "close": 63382.01,
+    "volume": 130.01138
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785697200000,
+    "open": 63382.01,
+    "high": 63389.64,
+    "low": 63346.62,
+    "close": 63358.07,
+    "volume": 80.88915
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785698100000,
+    "open": 63358.08,
+    "high": 63373.04,
+    "low": 63333.33,
+    "close": 63333.34,
+    "volume": 40.24154
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785699000000,
+    "open": 63333.34,
+    "high": 63394,
+    "low": 63323.89,
+    "close": 63393.99,
+    "volume": 36.58991
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785699900000,
+    "open": 63394,
+    "high": 63479.85,
+    "low": 63393.99,
+    "close": 63456.01,
+    "volume": 89.63779
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785700800000,
+    "open": 63456,
+    "high": 63470.26,
+    "low": 63422,
+    "close": 63462,
+    "volume": 33.13026
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785701700000,
+    "open": 63462,
+    "high": 63496,
+    "low": 63404.69,
+    "close": 63409.27,
+    "volume": 31.38492
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785702600000,
+    "open": 63409.27,
+    "high": 63454.12,
+    "low": 63409.26,
+    "close": 63431.14,
+    "volume": 25.44292
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785703500000,
+    "open": 63431.14,
+    "high": 63501.48,
+    "low": 63414.01,
+    "close": 63494.52,
+    "volume": 50.55452
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785704400000,
+    "open": 63494.51,
+    "high": 63571.98,
+    "low": 63479.45,
+    "close": 63527.45,
+    "volume": 93.00068
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785705300000,
+    "open": 63527.45,
+    "high": 63553.12,
+    "low": 63512,
+    "close": 63542.85,
+    "volume": 53.74943
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785706200000,
+    "open": 63542.85,
+    "high": 63781.69,
+    "low": 63508.6,
+    "close": 63704.01,
+    "volume": 162.13223
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785707100000,
+    "open": 63704.01,
+    "high": 63785,
+    "low": 63548.7,
+    "close": 63578,
+    "volume": 148.39522
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785708000000,
+    "open": 63578.01,
+    "high": 63796.33,
+    "low": 63578.01,
+    "close": 63696.27,
+    "volume": 151.09509
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785708900000,
+    "open": 63696.27,
+    "high": 63790.94,
+    "low": 63572.23,
+    "close": 63591.99,
+    "volume": 108.2341
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785709800000,
+    "open": 63592,
+    "high": 63600.39,
+    "low": 63376.71,
+    "close": 63518.01,
+    "volume": 159.46592
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785710700000,
+    "open": 63518,
+    "high": 63572.5,
+    "low": 63424,
+    "close": 63424.58,
+    "volume": 65.34579
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785711600000,
+    "open": 63424.58,
+    "high": 63457.5,
+    "low": 63344,
+    "close": 63363.99,
+    "volume": 91.73387
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785712500000,
+    "open": 63363.99,
+    "high": 63546.88,
+    "low": 63344,
+    "close": 63542.65,
+    "volume": 128.07208
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785713400000,
+    "open": 63542.65,
+    "high": 63596,
+    "low": 63490,
+    "close": 63523.33,
+    "volume": 56.72047
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785714300000,
+    "open": 63523.34,
+    "high": 63575.19,
+    "low": 63486.01,
+    "close": 63570,
+    "volume": 61.14656
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785715200000,
+    "open": 63570.01,
+    "high": 63596,
+    "low": 63390,
+    "close": 63425.05,
+    "volume": 97.5877
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785716100000,
+    "open": 63425.05,
+    "high": 63442,
+    "low": 63250.04,
+    "close": 63262.84,
+    "volume": 116.30809
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785717000000,
+    "open": 63262.84,
+    "high": 63425.97,
+    "low": 63208.3,
+    "close": 63331.81,
+    "volume": 88.28269
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785717900000,
+    "open": 63331.81,
+    "high": 63352,
+    "low": 63271.2,
+    "close": 63317.6,
+    "volume": 55.14494
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785718800000,
+    "open": 63317.61,
+    "high": 63350,
+    "low": 63180,
+    "close": 63221.18,
+    "volume": 96.81693
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785719700000,
+    "open": 63221.19,
+    "high": 63260,
+    "low": 63111.1,
+    "close": 63175.99,
+    "volume": 112.42212
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785720600000,
+    "open": 63175.99,
+    "high": 63248,
+    "low": 63160.66,
+    "close": 63219.31,
+    "volume": 72.91849
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785721500000,
+    "open": 63219.32,
+    "high": 63230,
+    "low": 63162,
+    "close": 63212.16,
+    "volume": 90.15564
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785722400000,
+    "open": 63212.16,
+    "high": 63233.29,
+    "low": 63138.93,
+    "close": 63205.31,
+    "volume": 72.05025
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785723300000,
+    "open": 63205.31,
+    "high": 63286,
+    "low": 63100,
+    "close": 63128,
+    "volume": 96.3039
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785724200000,
+    "open": 63128.01,
+    "high": 63216.79,
+    "low": 63108.33,
+    "close": 63180.4,
+    "volume": 80.88507
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785725100000,
+    "open": 63180.39,
+    "high": 63196,
+    "low": 63120.01,
+    "close": 63141.4,
+    "volume": 84.95037
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785726000000,
+    "open": 63141.39,
+    "high": 63168.44,
+    "low": 63100,
+    "close": 63116,
+    "volume": 66.48409
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785726900000,
+    "open": 63116,
+    "high": 63138.37,
+    "low": 63062.98,
+    "close": 63080.01,
+    "volume": 103.45743
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785727800000,
+    "open": 63080.01,
+    "high": 63089.98,
+    "low": 63039.99,
+    "close": 63062.93,
+    "volume": 98.6563
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785728700000,
+    "open": 63062.93,
+    "high": 63065.89,
+    "low": 62786.04,
+    "close": 62870.49,
+    "volume": 247.86641
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785729600000,
+    "open": 62870.48,
+    "high": 62938.55,
+    "low": 62816.34,
+    "close": 62865.93,
+    "volume": 116.58446
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785730500000,
+    "open": 62865.93,
+    "high": 62978.11,
+    "low": 62865.92,
+    "close": 62972.67,
+    "volume": 51.17981
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785731400000,
+    "open": 62972.67,
+    "high": 63001.77,
+    "low": 62965,
+    "close": 62981.99,
+    "volume": 63.96012
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785732300000,
+    "open": 62981.99,
+    "high": 62982,
+    "low": 62770.37,
+    "close": 62790,
+    "volume": 88.69324
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785733200000,
+    "open": 62790,
+    "high": 62871.13,
+    "low": 62751.3,
+    "close": 62852.01,
+    "volume": 129.52292
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785734100000,
+    "open": 62852.01,
+    "high": 62875.02,
+    "low": 62802,
+    "close": 62816,
+    "volume": 255.44536
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785735000000,
+    "open": 62816.01,
+    "high": 62849.98,
+    "low": 62774.88,
+    "close": 62808.75,
+    "volume": 76.42435
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785735900000,
+    "open": 62808.75,
+    "high": 62862.92,
+    "low": 62807.67,
+    "close": 62827.17,
+    "volume": 85.29943
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785736800000,
+    "open": 62827.17,
+    "high": 62872.58,
+    "low": 62823.2,
+    "close": 62846,
+    "volume": 65.56355
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785737700000,
+    "open": 62846.01,
+    "high": 62850,
+    "low": 62759.82,
+    "close": 62793.17,
+    "volume": 81.11909
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785738600000,
+    "open": 62793.17,
+    "high": 62841.01,
+    "low": 62640,
+    "close": 62640.01,
+    "volume": 141.45792
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785739500000,
+    "open": 62640.01,
+    "high": 62683.5,
+    "low": 62613,
+    "close": 62623.6,
+    "volume": 108.17785
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785740400000,
+    "open": 62623.6,
+    "high": 62676.85,
+    "low": 62592,
+    "close": 62599.99,
+    "volume": 629.92463
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785741300000,
+    "open": 62599.99,
+    "high": 62674.64,
+    "low": 62552.04,
+    "close": 62639.96,
+    "volume": 237.66196
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785742200000,
+    "open": 62639.95,
+    "high": 62700,
+    "low": 62603.1,
+    "close": 62643.92,
+    "volume": 133.73697
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785743100000,
+    "open": 62643.93,
+    "high": 62675.31,
+    "low": 62580.47,
+    "close": 62621.1,
+    "volume": 263.40471
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785744000000,
+    "open": 62621.1,
+    "high": 62647.69,
+    "low": 62516.01,
+    "close": 62566.01,
+    "volume": 83.25688
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785744900000,
+    "open": 62566.01,
+    "high": 62569.3,
+    "low": 62326,
+    "close": 62340.01,
+    "volume": 254.60838
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785745800000,
+    "open": 62340,
+    "high": 62439.36,
+    "low": 62300,
+    "close": 62439.35,
+    "volume": 196.22958
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785746700000,
+    "open": 62439.36,
+    "high": 62541.5,
+    "low": 62436.23,
+    "close": 62541.5,
+    "volume": 123.23638
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785747600000,
+    "open": 62541.5,
+    "high": 62590.2,
+    "low": 62520,
+    "close": 62571.24,
+    "volume": 206.73227
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785748500000,
+    "open": 62571.25,
+    "high": 62667.04,
+    "low": 62571.25,
+    "close": 62653.36,
+    "volume": 95.18715
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785749400000,
+    "open": 62653.36,
+    "high": 62707.5,
+    "low": 62628,
+    "close": 62692.49,
+    "volume": 104.78467
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785750300000,
+    "open": 62692.48,
+    "high": 62863.1,
+    "low": 62692.48,
+    "close": 62837.4,
+    "volume": 178.70666
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785751200000,
+    "open": 62837.4,
+    "high": 62860,
+    "low": 62766.66,
+    "close": 62788.01,
+    "volume": 107.41963
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785752100000,
+    "open": 62788.01,
+    "high": 62833.68,
+    "low": 62742.01,
+    "close": 62742.02,
+    "volume": 153.1931
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785753000000,
+    "open": 62742.02,
+    "high": 62742.02,
+    "low": 62674,
+    "close": 62708.86,
+    "volume": 75.51549
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785753900000,
+    "open": 62708.86,
+    "high": 62782,
+    "low": 62615.11,
+    "close": 62742.01,
+    "volume": 107.68113
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785754800000,
+    "open": 62742.01,
+    "high": 62744,
+    "low": 62585.16,
+    "close": 62646.02,
+    "volume": 68.10254
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785755700000,
+    "open": 62646.01,
+    "high": 62773.99,
+    "low": 62640,
+    "close": 62704.09,
+    "volume": 59.70978
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785756600000,
+    "open": 62704.09,
+    "high": 62778.92,
+    "low": 62669.86,
+    "close": 62697.4,
+    "volume": 53.42668
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785757500000,
+    "open": 62697.4,
+    "high": 62700,
+    "low": 62540.95,
+    "close": 62560.01,
+    "volume": 101.02551
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785758400000,
+    "open": 62560.01,
+    "high": 62612,
+    "low": 62445.26,
+    "close": 62555.59,
+    "volume": 156.00757
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785759300000,
+    "open": 62555.6,
+    "high": 62694,
+    "low": 62550,
+    "close": 62630.93,
+    "volume": 99.4507
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785760200000,
+    "open": 62630.92,
+    "high": 62767.32,
+    "low": 62614.99,
+    "close": 62767.32,
+    "volume": 100.22948
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785761100000,
+    "open": 62767.32,
+    "high": 62799.3,
+    "low": 62690.88,
+    "close": 62700,
+    "volume": 81.54488
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785762000000,
+    "open": 62700.01,
+    "high": 62786.81,
+    "low": 62700,
+    "close": 62782.46,
+    "volume": 110.27168
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785762900000,
+    "open": 62782.46,
+    "high": 62998,
+    "low": 62720.01,
+    "close": 62769,
+    "volume": 192.00617
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785763800000,
+    "open": 62769,
+    "high": 62940,
+    "low": 62562.42,
+    "close": 62928.57,
+    "volume": 367.61184
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785764700000,
+    "open": 62928.57,
+    "high": 63390,
+    "low": 62810.93,
+    "close": 63351.09,
+    "volume": 451.50164
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785765600000,
+    "open": 63351.09,
+    "high": 63444,
+    "low": 63136,
+    "close": 63320.65,
+    "volume": 354.94712
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785766500000,
+    "open": 63320.66,
+    "high": 63795,
+    "low": 63170,
+    "close": 63766.01,
+    "volume": 704.62291
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785767400000,
+    "open": 63766,
+    "high": 63910,
+    "low": 63631.11,
+    "close": 63783.15,
+    "volume": 764.47113
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785768300000,
+    "open": 63783.14,
+    "high": 63992.71,
+    "low": 63659.06,
+    "close": 63967.19,
+    "volume": 563.78267
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785769200000,
+    "open": 63967.19,
+    "high": 63989.75,
+    "low": 63764.18,
+    "close": 63821.23,
+    "volume": 509.31869
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785770100000,
+    "open": 63821.24,
+    "high": 63862.37,
+    "low": 63680,
+    "close": 63715.08,
+    "volume": 316.51708
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785771000000,
+    "open": 63715.07,
+    "high": 63910,
+    "low": 63709.27,
+    "close": 63791.7,
+    "volume": 325.03996
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785771900000,
+    "open": 63791.7,
+    "high": 63848,
+    "low": 63646.59,
+    "close": 63694.91,
+    "volume": 217.66231
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785772800000,
+    "open": 63694.9,
+    "high": 63897.64,
+    "low": 63664,
+    "close": 63807.58,
+    "volume": 359.3697
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785773700000,
+    "open": 63807.58,
+    "high": 63939.99,
+    "low": 63802,
+    "close": 63903.78,
+    "volume": 193.63881
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785774600000,
+    "open": 63903.78,
+    "high": 63903.78,
+    "low": 63710.71,
+    "close": 63766.8,
+    "volume": 120.31783
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785775500000,
+    "open": 63766.88,
+    "high": 63879.94,
+    "low": 63744,
+    "close": 63776.46,
+    "volume": 126.75316
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785776400000,
+    "open": 63776.46,
+    "high": 63863.48,
+    "low": 63714.55,
+    "close": 63850,
+    "volume": 101.17994
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785777300000,
+    "open": 63849.99,
+    "high": 64059.75,
+    "low": 63816,
+    "close": 63828,
+    "volume": 300.08161
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785778200000,
+    "open": 63828,
+    "high": 63930.81,
+    "low": 63793.21,
+    "close": 63900.01,
+    "volume": 115.95129
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785779100000,
+    "open": 63900,
+    "high": 63956.67,
+    "low": 63868.47,
+    "close": 63906,
+    "volume": 110.89376
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785780000000,
+    "open": 63905.99,
+    "high": 64000,
+    "low": 63870.04,
+    "close": 63966.13,
+    "volume": 95.35318
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785780900000,
+    "open": 63966.12,
+    "high": 63988,
+    "low": 63814.05,
+    "close": 63849.36,
+    "volume": 87.36622
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785781800000,
+    "open": 63849.37,
+    "high": 63926.81,
+    "low": 63810,
+    "close": 63852,
+    "volume": 94.85856
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785782700000,
+    "open": 63852,
+    "high": 63919.31,
+    "low": 63768,
+    "close": 63870.87,
+    "volume": 90.46681
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785783600000,
+    "open": 63870.87,
+    "high": 63932.17,
+    "low": 63846,
+    "close": 63920,
+    "volume": 82.95967
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785784500000,
+    "open": 63920,
+    "high": 64012,
+    "low": 63920,
+    "close": 63967.99,
+    "volume": 126.29083
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785785400000,
+    "open": 63968,
+    "high": 64080,
+    "low": 63864.27,
+    "close": 63954.71,
+    "volume": 182.46183
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785786300000,
+    "open": 63954.71,
+    "high": 63975.34,
+    "low": 63861.08,
+    "close": 63869.38,
+    "volume": 153.4695
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785787200000,
+    "open": 63869.38,
+    "high": 63957.51,
+    "low": 63816.65,
+    "close": 63897.98,
+    "volume": 103.34332
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785788100000,
+    "open": 63897.98,
+    "high": 64023.61,
+    "low": 63896.71,
+    "close": 63958.99,
+    "volume": 122.14249
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785789000000,
+    "open": 63958.99,
+    "high": 63958.99,
+    "low": 63907.7,
+    "close": 63926.1,
+    "volume": 98.95259
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785789900000,
+    "open": 63926.1,
+    "high": 63926.1,
+    "low": 63769.92,
+    "close": 63775.43,
+    "volume": 174.5552
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785790800000,
+    "open": 63775.43,
+    "high": 63787.25,
+    "low": 63712.23,
+    "close": 63722.47,
+    "volume": 162.91243
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785791700000,
+    "open": 63722.48,
+    "high": 63791.98,
+    "low": 63687.41,
+    "close": 63730.01,
+    "volume": 103.76547
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785792600000,
+    "open": 63730.01,
+    "high": 63734.09,
+    "low": 63670,
+    "close": 63681.47,
+    "volume": 73.31068
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785793500000,
+    "open": 63681.48,
+    "high": 63681.48,
+    "low": 63548,
+    "close": 63590.15,
+    "volume": 87.96156
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785794400000,
+    "open": 63590.15,
+    "high": 63611.59,
+    "low": 63392.01,
+    "close": 63498.2,
+    "volume": 214.46028
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785795300000,
+    "open": 63498.2,
+    "high": 63680,
+    "low": 63498.19,
+    "close": 63535.63,
+    "volume": 95.86469
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785796200000,
+    "open": 63535.63,
+    "high": 63565.23,
+    "low": 63496.18,
+    "close": 63509.53,
+    "volume": 76.20044
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785797100000,
+    "open": 63509.54,
+    "high": 63638.36,
+    "low": 63509.54,
+    "close": 63618,
+    "volume": 35.95746
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785798000000,
+    "open": 63618.01,
+    "high": 63618.01,
+    "low": 63528.01,
+    "close": 63542.36,
+    "volume": 57.38908
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785798900000,
+    "open": 63542.37,
+    "high": 63621.35,
+    "low": 63527.38,
+    "close": 63572,
+    "volume": 244.87296
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785799800000,
+    "open": 63572,
+    "high": 63572.01,
+    "low": 63465.43,
+    "close": 63500.32,
+    "volume": 93.50737
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785800700000,
+    "open": 63500.31,
+    "high": 63523.7,
+    "low": 63483.99,
+    "close": 63520,
+    "volume": 64.44026
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785801600000,
+    "open": 63520,
+    "high": 63585.09,
+    "low": 63469.9,
+    "close": 63469.91,
+    "volume": 93.32226
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785802500000,
+    "open": 63469.91,
+    "high": 63497.97,
+    "low": 63390.21,
+    "close": 63462.22,
+    "volume": 206.97065
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785803400000,
+    "open": 63462.22,
+    "high": 63462.22,
+    "low": 63343.19,
+    "close": 63399.99,
+    "volume": 151.97351
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785804300000,
+    "open": 63400,
+    "high": 63477.94,
+    "low": 63322.01,
+    "close": 63361.99,
+    "volume": 83.96766
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785805200000,
+    "open": 63362,
+    "high": 63497.54,
+    "low": 63361.99,
+    "close": 63476.82,
+    "volume": 94.62216
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785806100000,
+    "open": 63476.83,
+    "high": 63574.71,
+    "low": 63420.75,
+    "close": 63525.99,
+    "volume": 273.84497
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785807000000,
+    "open": 63526,
+    "high": 63927.99,
+    "low": 63526,
+    "close": 63810,
+    "volume": 245.54378
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785807900000,
+    "open": 63810,
+    "high": 63882.8,
+    "low": 63740.98,
+    "close": 63847.93,
+    "volume": 194.62178
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785808800000,
+    "open": 63847.92,
+    "high": 63867.95,
+    "low": 63758.36,
+    "close": 63772.01,
+    "volume": 222.32934
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785809700000,
+    "open": 63772.01,
+    "high": 63808.79,
+    "low": 63688,
+    "close": 63693.56,
+    "volume": 193.79035
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785810600000,
+    "open": 63693.56,
+    "high": 63972,
+    "low": 63686.44,
+    "close": 63902.02,
+    "volume": 139.99613
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785811500000,
+    "open": 63902.02,
+    "high": 63926.43,
+    "low": 63807.35,
+    "close": 63822.44,
+    "volume": 40.09326
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785812400000,
+    "open": 63822.45,
+    "high": 63836,
+    "low": 63690.18,
+    "close": 63690.18,
+    "volume": 52.72054
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785813300000,
+    "open": 63690.19,
+    "high": 63792,
+    "low": 63649,
+    "close": 63774,
+    "volume": 101.05996
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785814200000,
+    "open": 63773.99,
+    "high": 63860,
+    "low": 63773.99,
+    "close": 63836.03,
+    "volume": 106.03799
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785815100000,
+    "open": 63836.03,
+    "high": 63837.79,
+    "low": 63800.01,
+    "close": 63800.01,
+    "volume": 83.31436
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785816000000,
+    "open": 63800.01,
+    "high": 63827.84,
+    "low": 63762,
+    "close": 63802,
+    "volume": 141.45722
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785816900000,
+    "open": 63802.01,
+    "high": 63875.01,
+    "low": 63797.04,
+    "close": 63834.02,
+    "volume": 139.87825
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785817800000,
+    "open": 63834.01,
+    "high": 64054,
+    "low": 63834.01,
+    "close": 64054,
+    "volume": 187.65484
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785818700000,
+    "open": 64054,
+    "high": 64243.81,
+    "low": 64029,
+    "close": 64029,
+    "volume": 326.10013
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785819600000,
+    "open": 64029.01,
+    "high": 64056,
+    "low": 63840.36,
+    "close": 63840.37,
+    "volume": 98.45597
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785820500000,
+    "open": 63840.36,
+    "high": 63890,
+    "low": 63812.5,
+    "close": 63817.63,
+    "volume": 56.29943
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785821400000,
+    "open": 63817.64,
+    "high": 63862,
+    "low": 63810,
+    "close": 63861.99,
+    "volume": 39.84653
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785822300000,
+    "open": 63861.99,
+    "high": 63862,
+    "low": 63788.23,
+    "close": 63818.48,
+    "volume": 112.14443
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785823200000,
+    "open": 63818.47,
+    "high": 63847.82,
+    "low": 63774.91,
+    "close": 63804.89,
+    "volume": 78.27903
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785824100000,
+    "open": 63804.89,
+    "high": 63859.71,
+    "low": 63761,
+    "close": 63764.07,
+    "volume": 65.47674
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785825000000,
+    "open": 63764.07,
+    "high": 63780.7,
+    "low": 63693.77,
+    "close": 63706,
+    "volume": 68.96364
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785825900000,
+    "open": 63706,
+    "high": 63706,
+    "low": 63654.16,
+    "close": 63670,
+    "volume": 109.10308
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785826800000,
+    "open": 63670,
+    "high": 63670,
+    "low": 63588,
+    "close": 63595.55,
+    "volume": 61.96936
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785827700000,
+    "open": 63595.56,
+    "high": 63651.01,
+    "low": 63506.78,
+    "close": 63645.1,
+    "volume": 344.03573
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785828600000,
+    "open": 63645.1,
+    "high": 63763.63,
+    "low": 63645.1,
+    "close": 63660,
+    "volume": 219.08227
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785829500000,
+    "open": 63660,
+    "high": 63756,
+    "low": 63659.99,
+    "close": 63685.74,
+    "volume": 154.70816
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785830400000,
+    "open": 63685.73,
+    "high": 63748.22,
+    "low": 63630,
+    "close": 63646.98,
+    "volume": 126.29237
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785831300000,
+    "open": 63646.97,
+    "high": 63660,
+    "low": 63589.55,
+    "close": 63626.1,
+    "volume": 65.17919
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785832200000,
+    "open": 63626.11,
+    "high": 63626.11,
+    "low": 63564.99,
+    "close": 63620,
+    "volume": 152.27884
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785833100000,
+    "open": 63620,
+    "high": 63625.45,
+    "low": 63581.29,
+    "close": 63588.94,
+    "volume": 68.39814
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785834000000,
+    "open": 63589.04,
+    "high": 63589.04,
+    "low": 63540.01,
+    "close": 63550,
+    "volume": 136.48788
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785834900000,
+    "open": 63550,
+    "high": 63597.56,
+    "low": 63516.43,
+    "close": 63578.09,
+    "volume": 59.75761
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785835800000,
+    "open": 63578.08,
+    "high": 63595.99,
+    "low": 63532.58,
+    "close": 63576.66,
+    "volume": 42.44636
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785836700000,
+    "open": 63576.66,
+    "high": 63610,
+    "low": 63550,
+    "close": 63603.73,
+    "volume": 117.99324
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785837600000,
+    "open": 63603.73,
+    "high": 63613.34,
+    "low": 63507.51,
+    "close": 63510.86,
+    "volume": 186.24618
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785838500000,
+    "open": 63510.86,
+    "high": 63570,
+    "low": 63451.8,
+    "close": 63470,
+    "volume": 142.87666
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785839400000,
+    "open": 63470,
+    "high": 63667.34,
+    "low": 63465,
+    "close": 63666.51,
+    "volume": 88.51907
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785840300000,
+    "open": 63666.51,
+    "high": 63842,
+    "low": 63652.12,
+    "close": 63764,
+    "volume": 196.19149
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785841200000,
+    "open": 63763.99,
+    "high": 63804.52,
+    "low": 63718.3,
+    "close": 63746,
+    "volume": 74.27309
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785842100000,
+    "open": 63745.99,
+    "high": 63866,
+    "low": 63712,
+    "close": 63783.32,
+    "volume": 75.85938
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785843000000,
+    "open": 63783.32,
+    "high": 63894.99,
+    "low": 63720,
+    "close": 63876.59,
+    "volume": 86.19645
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785843900000,
+    "open": 63876.58,
+    "high": 63950,
+    "low": 63840.52,
+    "close": 63926,
+    "volume": 221.44306
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785844800000,
+    "open": 63926,
+    "high": 63926,
+    "low": 63811.41,
+    "close": 63811.42,
+    "volume": 117.26035
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785845700000,
+    "open": 63811.42,
+    "high": 63836,
+    "low": 63788,
+    "close": 63834.6,
+    "volume": 105.65247
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785846600000,
+    "open": 63834.6,
+    "high": 64062.46,
+    "low": 63814.57,
+    "close": 63966,
+    "volume": 230.96954
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785847500000,
+    "open": 63966.01,
+    "high": 64008.24,
+    "low": 63906.4,
+    "close": 63906.41,
+    "volume": 92.66301
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785848400000,
+    "open": 63906.41,
+    "high": 64015.22,
+    "low": 63845.68,
+    "close": 63945.3,
+    "volume": 132.02666
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785849300000,
+    "open": 63945.3,
+    "high": 64023.45,
+    "low": 63860.19,
+    "close": 63890.82,
+    "volume": 166.32101
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785850200000,
+    "open": 63890.82,
+    "high": 64097.74,
+    "low": 63819.48,
+    "close": 64013.8,
+    "volume": 381.48807
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785851100000,
+    "open": 64013.8,
+    "high": 64013.8,
+    "low": 63656,
+    "close": 63683.94,
+    "volume": 373.06781
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785852000000,
+    "open": 63683.95,
+    "high": 63926,
+    "low": 63615.38,
+    "close": 63803.16,
+    "volume": 233.58155
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785852900000,
+    "open": 63803.16,
+    "high": 63903.02,
+    "low": 63618.01,
+    "close": 63887.51,
+    "volume": 181.79947
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785853800000,
+    "open": 63887.51,
+    "high": 64180,
+    "low": 63860,
+    "close": 64124.84,
+    "volume": 304.47114
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785854700000,
+    "open": 64124.84,
+    "high": 64193.54,
+    "low": 64058,
+    "close": 64128.72,
+    "volume": 160.07376
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785855600000,
+    "open": 64128.73,
+    "high": 64218.07,
+    "low": 64000,
+    "close": 64065.94,
+    "volume": 284.2832
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785856500000,
+    "open": 64065.94,
+    "high": 64066,
+    "low": 63930.75,
+    "close": 63953.13,
+    "volume": 109.74763
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785857400000,
+    "open": 63953.13,
+    "high": 64126.55,
+    "low": 63814.29,
+    "close": 64126.54,
+    "volume": 231.05932
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785858300000,
+    "open": 64126.54,
+    "high": 64238,
+    "low": 64088,
+    "close": 64125.14,
+    "volume": 251.02765
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785859200000,
+    "open": 64125.14,
+    "high": 64130,
+    "low": 63970,
+    "close": 64033.59,
+    "volume": 124.98643
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785860100000,
+    "open": 64033.6,
+    "high": 64115.71,
+    "low": 64008,
+    "close": 64032,
+    "volume": 118.20237
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785861000000,
+    "open": 64032,
+    "high": 64060.41,
+    "low": 63897.22,
+    "close": 63945.53,
+    "volume": 111.82712
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785861900000,
+    "open": 63945.54,
+    "high": 64016,
+    "low": 63909.96,
+    "close": 63950.93,
+    "volume": 191.38714
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785862800000,
+    "open": 63950.94,
+    "high": 64184,
+    "low": 63950.93,
+    "close": 64067.53,
+    "volume": 312.38605
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785863700000,
+    "open": 64067.54,
+    "high": 64176.58,
+    "low": 64029.78,
+    "close": 64156.71,
+    "volume": 190.94535
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785864600000,
+    "open": 64156.72,
+    "high": 64178.83,
+    "low": 64090.9,
+    "close": 64094.81,
+    "volume": 85.1253
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785865500000,
+    "open": 64094.81,
+    "high": 64100.77,
+    "low": 63892,
+    "close": 63972.09,
+    "volume": 131.31838
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785866400000,
+    "open": 63972.09,
+    "high": 64220,
+    "low": 63965.73,
+    "close": 64219.99,
+    "volume": 130.6979
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785867300000,
+    "open": 64219.99,
+    "high": 64400,
+    "low": 64200,
+    "close": 64364.18,
+    "volume": 306.78324
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785868200000,
+    "open": 64364.19,
+    "high": 64400,
+    "low": 64212.61,
+    "close": 64296.34,
+    "volume": 142.26644
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785869100000,
+    "open": 64296.34,
+    "high": 64326,
+    "low": 64273.84,
+    "close": 64305.99,
+    "volume": 113.59914
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785870000000,
+    "open": 64305.99,
+    "high": 64371.04,
+    "low": 64286.76,
+    "close": 64350.18,
+    "volume": 144.12685
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785870900000,
+    "open": 64350.18,
+    "high": 64368.65,
+    "low": 64265.48,
+    "close": 64284.93,
+    "volume": 83.5709
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785871800000,
+    "open": 64284.93,
+    "high": 64413.21,
+    "low": 64257.46,
+    "close": 64380,
+    "volume": 162.21731
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785872700000,
+    "open": 64380,
+    "high": 64392,
+    "low": 64193.57,
+    "close": 64233.36,
+    "volume": 144.90878
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785873600000,
+    "open": 64233.35,
+    "high": 64247.4,
+    "low": 64115.68,
+    "close": 64175.52,
+    "volume": 138.28004
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785874500000,
+    "open": 64175.52,
+    "high": 64175.52,
+    "low": 64001.68,
+    "close": 64124.33,
+    "volume": 154.24878
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785875400000,
+    "open": 64124.33,
+    "high": 64420,
+    "low": 64124.33,
+    "close": 64392.01,
+    "volume": 203.27702
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785876300000,
+    "open": 64392,
+    "high": 64392,
+    "low": 64304.61,
+    "close": 64341,
+    "volume": 62.54654
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785877200000,
+    "open": 64341,
+    "high": 64341.99,
+    "low": 64200.29,
+    "close": 64223.88,
+    "volume": 91.01626
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785878100000,
+    "open": 64223.88,
+    "high": 64285.25,
+    "low": 64192.01,
+    "close": 64255.6,
+    "volume": 38.40478
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785879000000,
+    "open": 64255.6,
+    "high": 64270,
+    "low": 64199,
+    "close": 64248.15,
+    "volume": 38.11183
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785879900000,
+    "open": 64248.14,
+    "high": 64256,
+    "low": 64175.52,
+    "close": 64194,
+    "volume": 53.20321
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785880800000,
+    "open": 64193.99,
+    "high": 64226.9,
+    "low": 64140,
+    "close": 64226.01,
+    "volume": 47.74968
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785881700000,
+    "open": 64226,
+    "high": 64265.67,
+    "low": 64171.55,
+    "close": 64259.67,
+    "volume": 55.28349
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785882600000,
+    "open": 64259.68,
+    "high": 64293.91,
+    "low": 64215.96,
+    "close": 64216.01,
+    "volume": 38.90734
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785883500000,
+    "open": 64216.01,
+    "high": 64270.62,
+    "low": 64176.93,
+    "close": 64270.61,
+    "volume": 39.59183
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785884400000,
+    "open": 64270.62,
+    "high": 64474.92,
+    "low": 64213.31,
+    "close": 64425.99,
+    "volume": 133.0728
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785885300000,
+    "open": 64425.99,
+    "high": 64549.16,
+    "low": 64175.52,
+    "close": 64175.52,
+    "volume": 280.26469
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785886200000,
+    "open": 64175.53,
+    "high": 64263.62,
+    "low": 64144.69,
+    "close": 64214.9,
+    "volume": 80.36014
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785887100000,
+    "open": 64214.9,
+    "high": 64223.68,
+    "low": 64081.26,
+    "close": 64106.56,
+    "volume": 58.2168
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785888000000,
+    "open": 64106.55,
+    "high": 64106.56,
+    "low": 64017.3,
+    "close": 64036,
+    "volume": 110.70859
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785888900000,
+    "open": 64036,
+    "high": 64068,
+    "low": 64008.65,
+    "close": 64068,
+    "volume": 195.35958
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785889800000,
+    "open": 64068,
+    "high": 64193.25,
+    "low": 64024,
+    "close": 64072,
+    "volume": 143.27707
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785890700000,
+    "open": 64072,
+    "high": 64072,
+    "low": 63978.44,
+    "close": 63988,
+    "volume": 200.44075
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785891600000,
+    "open": 63988,
+    "high": 64028.93,
+    "low": 63950,
+    "close": 64010,
+    "volume": 110.66648
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785892500000,
+    "open": 64010,
+    "high": 64118.64,
+    "low": 63954.18,
+    "close": 64112.69,
+    "volume": 96.86538
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785893400000,
+    "open": 64112.68,
+    "high": 64298.34,
+    "low": 64112.68,
+    "close": 64182.04,
+    "volume": 117.44839
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785894300000,
+    "open": 64182.04,
+    "high": 64346,
+    "low": 64182.03,
+    "close": 64333.84,
+    "volume": 68.04713
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785895200000,
+    "open": 64333.85,
+    "high": 64504,
+    "low": 64333.85,
+    "close": 64460.13,
+    "volume": 184.38149
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785896100000,
+    "open": 64460.14,
+    "high": 64486,
+    "low": 64322.59,
+    "close": 64420.08,
+    "volume": 169.99873
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785897000000,
+    "open": 64420.09,
+    "high": 64484,
+    "low": 64412.56,
+    "close": 64433.06,
+    "volume": 106.85483
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785897900000,
+    "open": 64433.16,
+    "high": 64449.99,
+    "low": 64367.21,
+    "close": 64368.26,
+    "volume": 101.48549
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785898800000,
+    "open": 64368.27,
+    "high": 64446,
+    "low": 64352.99,
+    "close": 64353,
+    "volume": 58.8662
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785899700000,
+    "open": 64353,
+    "high": 64356,
+    "low": 64062,
+    "close": 64062.22,
+    "volume": 232.68173
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785900600000,
+    "open": 64062.22,
+    "high": 64172,
+    "low": 64046,
+    "close": 64139.99,
+    "volume": 105.59104
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785901500000,
+    "open": 64139.99,
+    "high": 64188.72,
+    "low": 64139.64,
+    "close": 64183.27,
+    "volume": 48.59954
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785902400000,
+    "open": 64183.27,
+    "high": 64197.27,
+    "low": 64128,
+    "close": 64128.71,
+    "volume": 52.15926
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785903300000,
+    "open": 64128.71,
+    "high": 64200,
+    "low": 64088.01,
+    "close": 64159.99,
+    "volume": 57.35852
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785904200000,
+    "open": 64159.99,
+    "high": 64218,
+    "low": 64158,
+    "close": 64182.4,
+    "volume": 37.47972
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785905100000,
+    "open": 64182.4,
+    "high": 64191.4,
+    "low": 64120,
+    "close": 64176.7,
+    "volume": 37.21723
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785906000000,
+    "open": 64176.69,
+    "high": 64327.55,
+    "low": 64163.36,
+    "close": 64318,
+    "volume": 77.6295
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785906900000,
+    "open": 64318.01,
+    "high": 64525.97,
+    "low": 64302,
+    "close": 64433.12,
+    "volume": 104.32673
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785907800000,
+    "open": 64433.13,
+    "high": 64437.41,
+    "low": 64341.56,
+    "close": 64362.26,
+    "volume": 67.42507
+  },
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "timestamp": 1785908700000,
+    "open": 64362.25,
+    "high": 64373.33,
+    "low": 64309.98,
+    "close": 64350.64,
+    "volume": 63.96029
+  }
+]

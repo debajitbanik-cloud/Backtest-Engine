@@ -1,0 +1,177 @@
+# Agent System Configuration
+# All agent configurations in one place
+
+system:
+  name: "TradingAgentSystem"
+  version: "1.0.0"
+  environment: "production"  # production, testnet, backtest
+  log_level: "INFO"
+  data_dir: "data"
+  report_dir: "reports"
+
+# Event bus settings
+event_bus:
+  max_history: 10000
+  heartbeat_interval: 30
+
+# Agent configurations
+agents:
+  # Leverage Adjustment Agent
+  leverage_adjustment:
+    enabled: true
+    leverage:
+      max_leverage: 20.0
+      min_leverage: 1.0
+      margin_warning_threshold: 0.70
+      margin_critical_threshold: 0.85
+      margin_liquidation_threshold: 0.95
+      adjustment_step: 0.5
+      cooldown_seconds: 60
+      lookback_periods: 20
+
+  # Bias Determining Agent
+  bias_determining:
+    enabled: true
+    bias:
+      timeframes: ["1m", "5m", "15m", "1h", "4h"]
+      primary_timeframe: "15m"
+      lookback_periods: 250
+      min_confidence: 0.60
+      trend_weight: 0.40
+      momentum_weight: 0.30
+      volume_weight: 0.20
+      volatility_weight: 0.10
+      ema_periods: [9, 21, 50, 200]
+      rsi_period: 14
+      macd_fast: 12
+      macd_slow: 26
+      macd_signal: 9
+
+  # Multi-Timeframe Confluence Agent
+  multitimeframe_confluence:
+    enabled: true
+    confluence:
+      timeframes: ["5m", "15m", "1h", "4h", "1d"]
+      required_alignment: 3
+      strong_alignment: 4
+      lookback_candles: 100
+      key_level_lookback: 50
+      min_confidence: 0.65
+      sr_touch_threshold: 0.002
+      volume_confirmation: true
+
+  # Position Sizing Agent
+  position_sizing:
+    enabled: true
+    sizing:
+      default_method: "confluence_weighted"  # fixed_risk, kelly, vol_adjusted, confluence_weighted
+      max_risk_per_trade: 0.02
+      max_portfolio_risk: 0.10
+      max_leverage: 20.0
+      min_leverage: 1.0
+      kelly_win_rate: 0.55
+      kelly_win_loss_ratio: 1.5
+      atr_multiplier: 2.0
+      atr_period: 14
+      confluence_boost: 1.5
+      max_position_pct: 0.20
+      correlation_limit: 0.7
+
+  # Style Managing Agent
+  style_managing:
+    enabled: true
+    style:
+      # Scalping config
+      scalping_max_hold_minutes: 15
+      scalping_target_pct: 0.003
+      scalping_stop_pct: 0.002
+      scalping_min_volatility: 0.005
+      scalping_max_spread_pct: 0.001
+      
+      # Swing config
+      swing_target_pct: 0.01
+      swing_stop_pct: 0.005
+      swing_min_hold_hours: 2
+      swing_max_hold_days: 7
+      swing_min_trend_strength: 0.6
+      
+      # Switching criteria
+      volatility_threshold_high: 0.03
+      volatility_threshold_low: 0.01
+      trend_threshold: 0.65
+      volume_threshold: 1.5
+      cooldown_hours: 1
+
+  # Risk Checking Agent
+  risk_checking:
+    enabled: true
+    risk:
+      max_portfolio_drawdown: 0.10
+      max_daily_loss: 0.03
+      max_position_size_pct: 0.20
+      max_sector_exposure: 0.40
+      max_leverage: 20.0
+      max_hold_time_losing_hours: 24
+      max_consecutive_losses: 5
+      loss_streak_reduction: 0.5
+      margin_warning: 0.70
+      margin_critical: 0.85
+      margin_liquidation: 0.95
+      max_portfolio_volatility: 0.05
+      var_confidence: 0.95
+      var_horizon_days: 1
+      max_correlation: 0.7
+      auto_mitigate: true
+      mitigation_cooldown_minutes: 15
+
+  # Trade Master Agent
+  trade_master:
+    enabled: true
+    trade_master:
+      data_dir: "data/trades"
+      report_dir: "reports"
+      optimization_enabled: true
+      optimization_interval_hours: 24
+      min_trades_for_optimization: 50
+
+  # Manager Agent
+  manager:
+    enabled: true
+    manager:
+      report_dir: "reports/manager"
+      tuning_enabled: true
+      tuning_interval_hours: 6
+      min_confidence_for_tuning: 0.70
+
+# Data feed configuration
+data_feed:
+  # Free crypto feed using CCXT/Binance (no API key)
+  free_crypto:
+    exchange: "binance"
+    symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT"]  # CCXT format
+    timeframes: ["1m", "5m", "15m"]
+    cache_dir: "data/cache"
+    rate_limit: true
+    enable_websocket: false
+  
+  # Delta Exchange (requires API key)
+  delta_exchange:
+    api_key: "gfg5CeE2y1f86WbqT8deoOosbV4KZN"  # API key
+    api_secret: "sealbOw2JDvTuFNoZu6pNyUUQVi52aG1xsUMJkizOAMTceZcNyAjV7eVNN3X"  # API secret
+    environment: "testnet"  # production or testnet
+    ws_url: "wss://socket.delta.exchange"
+    rest_url: "https://cdn-ind.testnet.deltaex.org"
+    reconnect_interval: 5
+    max_reconnect_attempts: 10
+    ping_interval: 20
+    symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT"]  # Default symbols
+    timeframes: ["1m", "5m", "15m", "1h", "4h"]
+
+# Trading symbols
+trading:
+  symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "DOGEUSDT"]
+  default_leverage: 10
+  base_currency: "USDT"
+  # Symbols for file-based data feed (from CSV aggregator)
+  file_symbols: ["SOLUSDT", "XAUTUSDT"]
+  file_timeframes: ["1m", "5m", "15m", "1h"]
