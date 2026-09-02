@@ -20,10 +20,10 @@ var _NAV_ITEMS = [
 
 var _BRIDGE_ITEMS = [
   { key: 'status',     label: 'Bridge Status',   group: 'BRIDGE', kind: 'info', path: '/health' },
-  { key: 'positions',  label: 'Open Positions',   group: 'BRIDGE', kind: 'info', path: '/positions' },
-  { key: 'tickers',    label: 'Live Tickers',     group: 'BRIDGE', kind: 'info', path: '/tickers' },
-  { key: 'bcal',       label: 'Econ Calendar',    group: 'BRIDGE', kind: 'info', path: '/calendar' },
-  { key: 'bstrat',     label: 'Bridge Strategies', group: 'BRIDGE', kind: 'info', path: '/strategies/list' },
+  { key: 'positions',  label: 'Open Positions',   group: 'BRIDGE', kind: 'info', path: '/delta/positions' },
+  { key: 'tickers',    label: 'Live Tickers',     group: 'BRIDGE', kind: 'info', path: '/delta/tickers' },
+  { key: 'bcal',       label: 'Econ Calendar',    group: 'BRIDGE', kind: 'info', path: '/calendar/events' },
+  { key: 'bstrat',     label: 'Bridge Strategies', group: 'BRIDGE', kind: 'info', path: '/strategies/library' },
 ];
 
 var _ALL_ITEMS = _NAV_ITEMS.concat(_BRIDGE_ITEMS);

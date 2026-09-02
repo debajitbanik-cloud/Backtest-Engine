@@ -37,7 +37,7 @@ window.TerminalCmds.set('status', function (_, ctx) {
   });
 });
 window.TerminalCmds.set('positions', function (_, ctx) {
-  return ctx.fetch('/positions').then(function (d) {
+  return ctx.fetch('/delta/positions').then(function (d) {
     var arr = Array.isArray(d) ? d : (d.positions || []);
     if (!arr.length) return '  no open positions';
     return arr.map(function (p) {
@@ -46,13 +46,13 @@ window.TerminalCmds.set('positions', function (_, ctx) {
   });
 });
 window.TerminalCmds.set('tickers', function (_, ctx) {
-  return ctx.fetch('/tickers').then(function (d) {
+  return ctx.fetch('/delta/tickers').then(function (d) {
     var arr = Array.isArray(d) ? d : (d.tickers || []);
-    return arr.map(function (t) { return (t.symbol || '-') + ': ' + (t.price || '-'); }).join(', ');
+    return arr.slice(0, 30).map(function (t) { return (t.symbol || '-') + ': ' + (t.close != null ? t.close : (t.mark_price != null ? t.mark_price : (t.spot_price || '-'))); }).join(', ');
   });
 });
 window.TerminalCmds.set('calendar', function (_, ctx) {
-  return ctx.fetch('/calendar').then(function (d) {
+  return ctx.fetch('/calendar/events').then(function (d) {
     var arr = (d.upcoming || d.events || []).slice(0, 5);
     if (!arr.length) return '  no upcoming events';
     return arr.map(function (e) {
@@ -62,7 +62,7 @@ window.TerminalCmds.set('calendar', function (_, ctx) {
   });
 });
 window.TerminalCmds.set('strategies', function (_, ctx) {
-  return ctx.fetch('/strategies/list').then(function (d) {
+  return ctx.fetch('/strategies/library').then(function (d) {
     var arr = d.strategies || d || [];
     if (!arr.length) return '  no strategies loaded';
     return arr.map(function (s) {
