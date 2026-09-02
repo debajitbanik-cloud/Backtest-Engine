@@ -332,16 +332,16 @@ class FeatureFactory:
                      "Momentum(10)", ["close"], 11)
         self.register("adx_14", self._adx(14), FeatureCategory.MOMENTUM,
                      "ADX(14) trend strength", ["high", "low", "close"], 15)
-        self.register("cci_20", lambda df: (df["close"] - df["close"].rolling(20).mean()) / (0.015 * (df["close"] - df["close"].rolling(20).mean()).abs().rolling(20).mean().replace(0, np.nan)),
-                     FeatureCategory.MOMENTUM, "CCI(20)", ["close"], 21)
+        self.register("cci_20", lambda df: ((df["high"] + df["low"] + df["close"]) / 3 - ((df["high"] + df["low"] + df["close"]) / 3).rolling(20).mean()) / (0.015 * ((df["high"] + df["low"] + df["close"]) / 3).rolling(20).apply(lambda x: np.abs(x - x.mean()).mean(), raw=True).replace(0, np.nan)),
+                     FeatureCategory.MOMENTUM, "CCI(20) using typical price", ["high", "low", "close"], 21)
         self.register("willr_14", lambda df: -100 * (df["high"].rolling(14).max() - df["close"]) / (df["high"].rolling(14).max() - df["low"].rolling(14).min()).replace(0, np.nan),
                      FeatureCategory.MOMENTUM, "Williams %R(14)", ["high", "low", "close"], 15)
         self.register("stoch_rsi", self._stoch_rsi(14), FeatureCategory.MOMENTUM,
                      "Stochastic RSI(14)", ["close"], 17)
-        self.register("aroon_up", lambda df: 100 * ((df["high"].rolling(25).apply(np.argmax) + 1) / 25),
-                     FeatureCategory.MOMENTUM, "Aroon Up(25)", ["high"], 26)
-        self.register("aroon_down", lambda df: 100 * ((df["low"].rolling(25).apply(np.argmin) + 1) / 25),
-                     FeatureCategory.MOMENTUM, "Aroon Down(25)", ["low"], 26)
+        self.register("aroon_up", self._aroon(25)[0], FeatureCategory.MOMENTUM,
+                     "Aroon Up(25)", ["high"], 26)
+        self.register("aroon_down", self._aroon(25)[1], FeatureCategory.MOMENTUM,
+                     "Aroon Down(25)", ["low"], 26)
 
         # ── Extended volatility features ────────────────────────────────────
         self.register("keltner_upper", lambda df: df["close"].ewm(span=20, adjust=False).mean() + 2 * self._atr(20)(df),
@@ -360,12 +360,12 @@ class FeatureFactory:
         # ── Extended volume features ────────────────────────────────────────
         self.register("obv", lambda df: (np.sign(df["close"].diff()).fillna(0) * df["volume"]).cumsum() if "volume" in df.columns else 0,
                      FeatureCategory.VOLUME, "On-balance volume", ["close", "volume"], 2)
-        self.register("obv_slope", lambda df: (np.sign(df["close"].diff()).fillna(0) * df["volume"]).cumsum().rolling(14).mean() if "volume" in df.columns else 0,
+        self.register("obv_slope", lambda df: (np.sign(df["close"].diff()).fillna(0) * df["volume"]).cumsum().diff(14) if "volume" in df.columns else 0,
                      FeatureCategory.VOLUME, "OBV slope(14)", ["close", "volume"], 15)
         self.register("mfi_14", self._mfi(14), FeatureCategory.VOLUME,
                      "Money Flow Index(14)", ["high", "low", "close", "volume"], 15)
-        self.register("cmf_20", lambda df: ((df["close"] - df["low"]) - (df["high"] - df["close"])) / (df["high"] - df["low"]).replace(0, np.nan) * df["volume"] if "volume" in df.columns else 0,
-                     FeatureCategory.VOLUME, "Chaikin Money Flow(20)", ["high", "low", "close", "volume"], 21)
+        self.register("cmf_20", self._cmf(20), FeatureCategory.VOLUME,
+                     "Chaikin Money Flow(20)", ["high", "low", "close", "volume"], 21)
         self.register("volume_zscore_20", lambda df: (df["volume"] - df["volume"].rolling(20).mean()) / df["volume"].rolling(20).std().replace(0, np.nan) if "volume" in df.columns else 0,
                      FeatureCategory.VOLUME, "Volume z-score(20)", ["volume"], 21)
         self.register("dollar_volume", lambda df: df["close"] * df["volume"] if "volume" in df.columns else df["close"],
@@ -612,6 +612,33 @@ class FeatureFactory:
             pos = mf.where(tp > tp.shift(1), 0.0).rolling(period).sum()
             neg = mf.where(tp < tp.shift(1), 0.0).rolling(period).sum()
             return 100 - (100 / (1 + pos / neg.replace(0, np.nan)))
+        return _calc
+
+    def _aroon(self, period: int) -> tuple:
+        """Correct Aroon Up/Down: 100*(period - days_since_rolling_high/low)/period."""
+        def _make(is_high: bool):
+            def _calc(df: pd.DataFrame) -> pd.Series:
+                col = df["high"] if is_high else df["low"]
+                def _days_since(x):
+                    if is_high:
+                        idx = np.where(x == x.max())[0]
+                    else:
+                        idx = np.where(x == x.min())[0]
+                    days = (len(x) - 1) - idx[-1]
+                    return 100.0 * (period - days) / period
+                return col.rolling(period).apply(_days_since, raw=True)
+            return _calc
+        return _make(True), _make(False)
+
+    def _cmf(self, period: int) -> Callable[[pd.DataFrame], pd.Series]:
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            if "volume" not in df.columns:
+                return pd.Series(np.nan, index=df.index)
+            hl = (df["high"] - df["low"]).replace(0, np.nan)
+            mfm = ((df["close"] - df["low"]) - (df["high"] - df["close"])) / hl
+            mfv = mfm.fillna(0) * df["volume"]
+            vol_sum = df["volume"].rolling(period).sum().replace(0, np.nan)
+            return mfv.rolling(period).sum() / vol_sum
         return _calc
 
 

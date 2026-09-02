@@ -217,6 +217,7 @@ def cross_asset_features(tickers: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     prices = {}
     memes = []
     sectors: Dict[str, List[float]] = {}
+    _METALS = {"XAU", "XAG"}
 
     for t in rows:
         b = base(t.get("symbol", ""))
@@ -224,7 +225,8 @@ def cross_asset_features(tickers: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         chg = _f(t.get("mark_change_24h", t.get("ltp_change_24h", 0)))
         if spot <= 0:
             continue
-        prices.setdefault(b, spot)
+        if b not in _METALS:
+            prices.setdefault(b, spot)
         tag = t.get("top_tag") or "crypto"
         sectors.setdefault(tag, []).append(chg)
         if b in ("DOGE", "SHIB", "PEPE", "WIF", "BONK", "FLOKI", "MEME"):
@@ -235,12 +237,14 @@ def cross_asset_features(tickers: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
 
     btc = prices.get("BTC", 0)
     eth = prices.get("ETH", 0)
-    total = sum(prices.values())
+    # "dominance" is a price-weighted share of BTC/ETH within the crypto universe
+    # (metals excluded) — useful as a momentum/rotation gauge, NOT a market-cap metric.
+    total_crypto = sum(prices.values())
     feats["btc_price"] = btc
     feats["eth_price"] = eth
-    feats["btc_dominance"] = round(_safe_div(btc, total) * 100, 2)
+    feats["btc_dominance"] = round(_safe_div(btc, total_crypto) * 100, 2)
     feats["eth_btc_ratio"] = round(_safe_div(eth, btc), 4)
-    feats["eth_dominance"] = round(_safe_div(eth, total) * 100, 2)
+    feats["eth_dominance"] = round(_safe_div(eth, total_crypto) * 100, 2)
 
     def avg(xs: List[float]) -> float:
         return round(sum(xs) / len(xs), 2) if xs else 0.0

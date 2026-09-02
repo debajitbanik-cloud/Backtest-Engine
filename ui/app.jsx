@@ -103,10 +103,11 @@ function StatusDot({ on, color }) {
   return React.createElement('span', { style: { display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: on ? (color || COLORS.green) : COLORS.red, boxShadow: on ? `0 0 6px ${color || COLORS.green}` : 'none', marginRight: 6 } });
 }
 
-function Card({ children, style, pad, className }) {
+function Card({ children, style, pad, className, onClick }) {
   var E = window.Theme && window.Theme.EXTRA || {};
   return React.createElement('div', {
     className: className || '',
+    onClick: onClick,
     style: Object.assign({
       background: E.glass || '#111318',
       border: '1px solid ' + (E.glassBorder || '#22242c'),
@@ -297,7 +298,7 @@ function PayoffGraph({ strategy, spot }) {
 
 /* ============================ OPTION STRATEGY CARD ============================ */
 function OptionStrategyCard({ strategy, spot, running, onToggle, onExplain, onSelect }) {
-  return React.createElement(Card, { style: { marginBottom: 10, cursor: 'pointer' }, pad: 12 },
+  return React.createElement(Card, { style: { marginBottom: 10, cursor: 'pointer' }, pad: 12, onClick: () => onSelect && onSelect(strategy) },
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
         React.createElement('span', { style: { fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: (strategy.color || COLORS.blue) + '22', color: strategy.color || COLORS.blue } }, strategy.tag),
@@ -353,7 +354,7 @@ function BacktestPanel({ strategy, onClose }) {
     React.createElement('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 } },
       React.createElement('div', null,
         React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'Asset'),
-        React.createElement('div', { style: { display: 'flex', gap: 4 } }, ASSET_TABS.filter(a => a !== 'MEME').map(a => React.createElement(Tab, { key: a, small: true, active: asset === a, onClick: () => setAsset(a) }, a)))
+        React.createElement('div', { style: { display: 'flex', gap: 4 } }, ASSET_TABS.map(a => React.createElement(Tab, { key: a, small: true, active: asset === a, onClick: () => setAsset(a) }, a)))
       ),
       React.createElement('div', null,
         React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'Timeframe'),
@@ -724,8 +725,9 @@ function RegistryView() {
   const [err, setErr] = useState(null);
   const [cat, setCat] = useState('ALL');
   useEffect(() => { fetch(`${API}/analytics/registry`).then(r => r.ok ? r.json() : null).then(x => { if (x && !x.error) setD(x); else setErr((x && x.error) || 'failed'); }).catch(() => setErr('failed')); }, []);
-  const cats = d ? [...new Set(d.features.map(f => f.category))] : [];
-  const feats = d ? d.features.filter(f => cat === 'ALL' || f.category === cat) : [];
+  const features = (d && Array.isArray(d.features)) ? d.features : [];
+  const cats = [...new Set(features.map(f => f.category))];
+  const feats = features.filter(f => cat === 'ALL' || f.category === cat);
   return React.createElement('div', null,
     err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
     d && React.createElement('div', null,
@@ -773,6 +775,7 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
   const topLoser = losers && losers.length ? losers.slice().sort((a, b) => (a.change_24h || 0) - (b.change_24h || 0))[0] : null;
   const connected = health && health.connected;
   const trading = health && health.mode === 'trading';
+  const noAuth = !!(health && !health.has_auth);
   return React.createElement('div', null,
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 } },
       topGainer && React.createElement(Card, { pad: 14, style: { borderColor: COLORS.green } },
@@ -791,12 +794,12 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
           React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'TRADING CONNECTED'),
           React.createElement('span', { style: {
-            width: 34, height: 19, borderRadius: 11, cursor: modeBusy ? 'wait' : 'pointer',
+            width: 34, height: 19, borderRadius: 11, cursor: (modeBusy || noAuth) ? 'not-allowed' : 'pointer',
             background: trading ? COLORS.green : COLORS.bgElevated,
             border: '1px solid ' + (trading ? COLORS.green : COLORS.border),
             position: 'relative', transition: 'background 0.2s',
-            opacity: modeBusy ? 0.6 : 1,
-          }, onClick: () => { if (!modeBusy && onModeToggle) onModeToggle(trading ? 'read_only' : 'trading'); } },
+            opacity: (modeBusy || noAuth) ? 0.4 : 1,
+          }, onClick: () => { if (!modeBusy && !noAuth && onModeToggle) onModeToggle(trading ? 'read_only' : 'trading'); } },
             React.createElement('span', { style: {
               position: 'absolute', top: 2, width: 13, height: 13, borderRadius: '50%',
               left: trading ? 17 : 2, background: trading ? '#0a0b0f' : COLORS.textSecondary,
@@ -810,7 +813,7 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
           React.createElement('span', { style: { marginLeft: 'auto', fontSize: 10, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, (health && health.environment || 'production'))
         ),
         React.createElement('div', { style: { marginTop: 4, fontSize: 11, fontFamily: E.fontMono || 'inherit', color: trading ? COLORS.green : COLORS.amber, fontWeight: 700 } }, trading ? '▲ TRADING MODE' : '● READ ONLY'),
-        (!health.has_auth && (React.createElement('div', { style: { marginTop: 4, fontSize: 10, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'No API keys — trading disabled' )))
+        (health && !health.has_auth && (React.createElement('div', { style: { marginTop: 4, fontSize: 10, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'No API keys — trading disabled' )))
       )
     ),
     React.createElement(Section, { title: 'Trending Perpetuals', right: React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'sorted by 24h change') },
@@ -990,8 +993,9 @@ function LibraryView() {
   const [specError, setSpecError] = useState(null);
   const [btResult, setBtResult] = useState(null);
   const [btRunning, setBtRunning] = useState(false);
+  const [err, setErr] = useState(null);
   useEffect(() => {
-    fetch(`${API}/strategies/library`).then(r => r.json()).then(d => setData(d)).catch(() => {});
+    fetch(`${API}/strategies/library`).then(r => r.ok ? r.json() : null).then(d => { if (d && d.strategies) setData(d); else setErr('Strategy library unavailable'); }).catch(() => setErr('Failed to load strategy library'));
   }, []);
   const generate = async () => {
     if (!desc.trim()) return;
@@ -1014,8 +1018,8 @@ function LibraryView() {
     } catch (e) { setBtResult({ error: String(e) }); }
     setBtRunning(false);
   };
-  if (!data) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { fontSize: 12, color: COLORS.textTertiary } }, 'Loading strategy library…'));
-  let list = data.strategies;
+  if (!data) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { fontSize: 12, color: err ? COLORS.red : COLORS.textTertiary } }, err || 'Loading strategy library…'));
+  let list = data.strategies || [];
   if (classFilter !== 'ALL') list = list.filter(s => s.class === classFilter);
   if (assetFilter !== 'ALL') list = list.filter(s => (s.assets || []).includes(assetFilter));
   return React.createElement('div', null,
@@ -1206,9 +1210,11 @@ function JournalView() {
   const loadSessions = async () => {
     try { const r = await fetch(`${API}/journal/sessions?limit=50`); const j = await r.json(); if (j.sessions) setSessions(j.sessions); } catch (e) {}
   };
-  const loadLog = async () => {
+  const loadLog = async (cat, level) => {
     try {
-      const r = await fetch(`${API}/journal/log?category=${logCat}&level=${logLevel}&limit=300`);
+      const c = cat != null ? cat : logCat;
+      const l = level != null ? level : logLevel;
+      const r = await fetch(`${API}/journal/log?category=${c}&level=${l}&limit=300`);
       const j = await r.json();
       if (j.entries) setLog(j.entries);
     } catch (e) {}
@@ -1220,14 +1226,19 @@ function JournalView() {
 
   const refresh = () => { loadStats(days); loadTrades(); loadSessions(); loadNotifications(); };
 
+  const logFilterRef = React.useRef({ cat: 'ALL', level: 'ALL' });
+
   useEffect(() => {
     reportEvent('Journal opened', 'ui', 'INFO');
     refresh();
-    const iv = setInterval(() => { loadLog(); loadNotifications(); }, 10000);
+    const iv = setInterval(() => {
+      loadLog(logFilterRef.current.cat, logFilterRef.current.level);
+      loadNotifications();
+    }, 10000);
     return () => clearInterval(iv);
   }, []);
 
-  useEffect(() => { loadLog(); }, [logCat, logLevel]);
+  useEffect(() => { logFilterRef.current = { cat: logCat, level: logLevel }; loadLog(); }, [logCat, logLevel]);
   useEffect(() => { loadStats(days); }, [days]);
 
   useEffect(() => {
