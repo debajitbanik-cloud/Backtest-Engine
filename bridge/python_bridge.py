@@ -339,21 +339,22 @@ class PythonBridge:
         
         try:
             while True:
-                event = await asyncio.wait_for(self._event_queue.get(), timeout=30)
-                data = json.dumps({
-                    "type": event.type.value,
-                    "source": event.source_agent,
-                    "timestamp": event.timestamp.isoformat(),
-                    "payload": event.payload
-                })
-                await response.write(f"data: {data}\n\n".encode())
-        except asyncio.TimeoutError:
-            # Send keepalive
-            await response.write(f"data: {json.dumps({'type': 'keepalive'})}\n\n".encode())
+                try:
+                    event = await asyncio.wait_for(self._event_queue.get(), timeout=30)
+                    data = json.dumps({
+                        "type": event.type.value,
+                        "source": event.source_agent,
+                        "timestamp": event.timestamp.isoformat(),
+                        "payload": event.payload
+                    })
+                    await response.write(f"data: {data}\n\n".encode())
+                    await response.drain()
+                except asyncio.TimeoutError:
+                    # Send keepalive to keep the stream open (client EventSource stays connected)
+                    await response.write(f"data: {json.dumps({'type': 'keepalive'})}\n\n".encode())
+                    await response.drain()
         except Exception as e:
             print(f"SSE error: {e}")
-        else:
-            await response.drain()
         finally:
             pass
     
