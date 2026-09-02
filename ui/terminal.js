@@ -132,6 +132,14 @@ window.TerminalView = React.memo(function TerminalView(props) {
 
   React.useEffect(function () { scrollBottom(); }, [lines]);
 
+  React.useEffect(function () {
+    if (props.pendingCmd && typeof props.pendingCmd === 'string' && props.pendingCmd.trim()) {
+      var cmd = props.pendingCmd.trim();
+      setVal(cmd);
+      setTimeout(function () { runCommand(cmd); }, 50);
+    }
+  }, []);
+
   var runCommand = function (raw) {
     var trimmed = raw.trim();
     if (!trimmed) return;
@@ -272,7 +280,14 @@ window.TerminalView = React.memo(function TerminalView(props) {
           color: LIME, fontSize: 13, fontFamily: MONO, caretColor: LIME,
         }
       })
-    )
+    ),
+    React.createElement('div', {
+      style: {
+        padding: '4px 14px', borderTop: '1px solid ' + BORDER,
+        background: 'rgba(0,0,0,0.15)', flexShrink: 0,
+        fontSize: 10, color: '#5a5e6f', fontFamily: MONO,
+      }
+    }, 'awaiting input_ ... (Cmd+K palette: type \'> cmd\')')
   );
 });
 

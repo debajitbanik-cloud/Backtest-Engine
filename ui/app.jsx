@@ -1154,6 +1154,8 @@ function App() {
   const [losers, setLosers] = useState([]);
   const [search, setSearch] = useState('');
   const [chartSymbol, setChartSymbol] = useState('BTC');
+  const pendingTermRef = useRef(null);
+  const setTerminalCommand = (cmd) => { pendingTermRef.current = cmd; setTab('terminal'); };
 
   useEffect(() => {
     const poll = async () => {
@@ -1178,6 +1180,42 @@ function App() {
     return () => { clearInterval(iv); es.close(); };
   }, []);
 
+  useEffect(() => {
+    if (window.__chromeMounted) return;
+    window.__chromeMounted = true;
+    try {
+      if (window.Chrome && window.Chrome.runBoot) window.Chrome.runBoot();
+      if (window.Chrome && window.Chrome.createScanline && !document.querySelector('.cc-scanline')) document.body.appendChild(window.Chrome.createScanline());
+      if (window.Chrome && window.Chrome.createGrid && !document.querySelector('.cc-grid')) document.body.appendChild(window.Chrome.createGrid());
+      if (window.Chrome && window.Chrome.createNoise && !document.querySelector('.cc-noise')) document.body.appendChild(window.Chrome.createNoise());
+      if (window.Chrome && window.Chrome.createParticleField && !document.querySelector('.cc-particles')) document.body.appendChild(window.Chrome.createParticleField());
+      if (window.Chrome && window.Chrome.createDataStream && !document.querySelector('.cc-datastream')) document.body.appendChild(window.Chrome.createDataStream());
+      if (window.Chrome && window.Chrome.initCursor) window.Chrome.initCursor();
+      if (window.Chrome && window.Chrome.initTilt) window.Chrome.initTilt();
+    } catch (e) {}
+    document.addEventListener('click', function arm() {
+      try { if (window.Chrome && window.Chrome.audio) window.Chrome.audio.arm(); } catch (e) {}
+      document.removeEventListener('click', arm);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (window.__paletteMounted) return;
+    window.__paletteMounted = true;
+    try {
+      if (window.Palette) {
+        var pal = document.getElementById('command-palette-root');
+        if (!pal) {
+          pal = document.createElement('div');
+          pal.id = 'command-palette-root';
+          document.body.appendChild(pal);
+        }
+        window.Palette.mount(pal, { onNavigate: (k) => setTab(k) });
+        if (window.Palette.setTerminalRunner) window.Palette.setTerminalRunner(setTerminalCommand);
+      }
+    } catch (e) {}
+  }, []);
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'options', label: 'Options' },
@@ -1186,6 +1224,7 @@ function App() {
     { id: 'library', label: 'Strategy Library' },
     { id: 'journal', label: 'Journal' },
     { id: 'analytics', label: 'Analytics' },
+    { id: 'terminal', label: 'TERM' },
   ];
 
   return React.createElement('div', { style: { minHeight: '100vh', background: COLORS.bgRoot, color: COLORS.text } },
@@ -1200,7 +1239,16 @@ function App() {
         ),
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', fontSize: 12, color: COLORS.textSecondary } },
           React.createElement(StatusDot, { on: connected }), connected ? 'Live' : 'Offline'
-        )
+        ),
+        React.createElement('button', {
+          onClick: (e) => { const ap = window.Chrome && window.Chrome.audio; if (ap) {
+            ap.arm();
+            const m = ap.toggle();
+            if (m) ap.mute(); else ap.unmute();
+            e.target.textContent = ap.isMuted() ? 'SOUND OFF' : 'SOUND ON';
+          } },
+          style: { padding: '5px 10px', borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 11, fontFamily: 'JetBrains Mono, monospace', cursor: 'pointer' }
+        }, 'SOUND ON')
       )
     ),
     React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto' } },
@@ -1210,7 +1258,8 @@ function App() {
       tab === 'calendar' && React.createElement(CalendarView, null),
       tab === 'library' && React.createElement(LibraryView, null),
       tab === 'journal' && React.createElement(JournalView, null),
-      tab === 'analytics' && React.createElement(AnalyticsView, null)
+      tab === 'analytics' && React.createElement(AnalyticsView, null),
+      tab === 'terminal' && React.createElement(window.TerminalView, { pendingCmd: pendingTermRef.current }),
     )
   );
 }
