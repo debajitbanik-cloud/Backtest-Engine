@@ -1,5 +1,6 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const API = 'http://127.0.0.1:8088';
+const BRIDGE_TOKEN = '8G8VGUXx1sjVEmK7Y2fqs0VF6wcukOXSXwI6dVv24WY';
 
 const COLORS = {
   bgRoot: '#0a0b0f', bgSurface: '#111318', bgElevated: '#161820', bgHover: '#1c1e26',
@@ -479,13 +480,16 @@ function AnalyticsView() {
 }
 
 /* ============================ DASHBOARD VIEW ============================ */
-function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol }) {
+function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }) {
+  const E = window.Theme && window.Theme.EXTRA || {};
   const [chartSource, setChartSource] = useState('delta');
   const [chartTf, setChartTf] = useState('1h');
   const topGainer = gainers && gainers.length ? gainers[0] : null;
   const topLoser = losers && losers.length ? losers.slice().sort((a, b) => (a.change_24h || 0) - (b.change_24h || 0))[0] : null;
+  const connected = health && health.connected;
+  const trading = health && health.mode === 'trading';
   return React.createElement('div', null,
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 18 } },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 } },
       topGainer && React.createElement(Card, { pad: 14, style: { borderColor: COLORS.green } },
         React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Top Gainer 24h'),
         React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: COLORS.green, marginTop: 4 } }, topGainer.symbol),
@@ -498,8 +502,34 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
         React.createElement('div', { style: { fontSize: 14, color: COLORS.red } }, fmtPct(topLoser.change_24h)),
         React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, `Vol ${fmtCur(topLoser.volume_24h)}`)
       ),
-      React.createElement(Metric, { label: 'Delta Status', value: health && health.connected ? 'Connected' : 'Offline', color: health && health.connected ? COLORS.green : COLORS.red, sub: (health && health.environment || 'production') }),
-      React.createElement(Metric, { label: 'Mode', value: health && health.mode === 'trading' ? 'TRADING' : 'READ ONLY', color: health && health.mode === 'trading' ? COLORS.green : COLORS.amber })
+      React.createElement(Card, { pad: 14, style: { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderColor: connected ? (trading ? COLORS.green : COLORS.amber) : COLORS.red } },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+          React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'TRADING CONNECTED'),
+          React.createElement('span', { style: {
+            width: 34, height: 19, borderRadius: 11, cursor: modeBusy ? 'wait' : 'pointer',
+            background: trading ? COLORS.green : COLORS.bgElevated,
+            border: '1px solid ' + (trading ? COLORS.green : COLORS.border),
+            position: 'relative', transition: 'background 0.2s',
+            opacity: modeBusy ? 0.6 : 1,
+          }, onClick: () => { if (!modeBusy && onModeToggle) onModeToggle(trading ? 'read_only' : 'trading'); } },
+            React.createElement('span', { style: {
+              position: 'absolute', top: 2, width: 13, height: 13, borderRadius: '50%',
+              left: trading ? 17 : 2, background: trading ? '#0a0b0f' : COLORS.textSecondary,
+              transition: 'left 0.2s',
+            } })
+          )
+        ),
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 } },
+          React.createElement('span', { style: { width: 8, height: 8, borderRadius: '50%', background: connected ? COLORS.green : COLORS.red, boxShadow: connected ? '0 0 8px ' + COLORS.green : 'none' } }),
+          React.createElement('span', { style: { fontSize: 18, fontFamily: E.fontDisplay || 'inherit', fontWeight: 700, color: connected ? COLORS.green : COLORS.red } }, connected ? 'Connected' : 'Offline'),
+          React.createElement('span', { style: { marginLeft: 'auto', fontSize: 10, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, (health && health.environment || 'production'))
+        ),
+        React.createElement('div', { style: { marginTop: 4, fontSize: 11, fontFamily: E.fontMono || 'inherit', color: trading ? COLORS.green : COLORS.amber, fontWeight: 700 } }, trading ? '▲ TRADING MODE' : '● READ ONLY'),
+        (!health.has_auth && (React.createElement('div', { style: { marginTop: 4, fontSize: 10, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'No API keys — trading disabled' )))
+      )
+    ),
+    React.createElement(Section, { title: 'Trending Perpetuals', right: React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'sorted by 24h change') },
+      React.createElement(TrendingPairs, { limit: 12 })
     ),
     React.createElement(Section, { title: 'Asset Chart', right: React.createElement('div', { style: { display: 'flex', gap: 4 } },
         React.createElement(Tab, { small: true, active: chartSource === 'delta', onClick: () => setChartSource('delta') }, 'Delta'),
@@ -523,6 +553,55 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
           ? React.createElement(TradingViewWidget, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
           : React.createElement(PriceChart, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
       )
+    )
+  );
+}
+
+/* ============================ TRENDING PERPETUALS ============================ */
+function TrendingPairs({ limit }) {
+  var E = window.Theme && window.Theme.EXTRA || {};
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState(null);
+  const load = async () => {
+    try {
+      const r = await fetch(`${API}/delta/tickers`);
+      if (!r.ok) throw new Error('tickers ' + r.status);
+      const d = await r.json();
+      const perps = (d.tickers || []).filter(t => t && t.contract_type === 'perpetual_futures' && t.symbol && !/^[CP]-/.test(t.symbol));
+      const sorted = perps
+        .map(t => ({
+          symbol: t.symbol,
+          price: Number(t.mark_price || t.close || 0),
+          chg: Number(t.mark_change_24h != null ? t.mark_change_24h : t.ltp_change_24h || 0),
+          vol: Number(t.turnover_usd || 0),
+        }))
+        .filter(x => x.chg !== 0 || true)
+        .sort((a, b) => b.chg - a.chg)
+        .slice(0, limit || 12);
+      setRows(sorted);
+      setErr(null);
+    } catch (e) { setErr(String(e.message || e)); }
+  };
+  useEffect(() => { load(); const iv = setInterval(load, 30000); return () => clearInterval(iv); }, [limit]);
+  return React.createElement(Card, { pad: 14 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+      React.createElement('div', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', fontWeight: 700, color: COLORS.text, letterSpacing: 0.4 } }, 'TRENDING PERPETUAL PAIRS'),
+      React.createElement('span', { style: { fontSize: 10, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, '24h')
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' } },
+      !rows && !err && ['…', '…', '…', '…'].map((_, i) => React.createElement('div', { key: i, style: { height: 14, background: COLORS.bgElevated, borderRadius: 4 } })),
+      err && React.createElement('div', { style: { fontSize: 11, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'tickers unavailable — ' + err),
+      (rows || []).map((x, i) => {
+        const up = x.chg >= 0;
+        const c = up ? COLORS.green : COLORS.red;
+        return React.createElement('div', { key: x.symbol + i, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 } },
+          React.createElement('span', { style: { width: 18, textAlign: 'right', fontFamily: E.fontMono || 'inherit', fontSize: 10, color: COLORS.textTertiary } }, i + 1),
+          React.createElement('span', { style: { flex: 1, fontWeight: 700, color: COLORS.text, fontFamily: E.fontDisplay || 'inherit' } }, x.symbol.replace(/USD$/, '')),
+          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', color: COLORS.textSecondary } }, '$' + Number(x.price).toLocaleString(undefined, { maximumFractionDigits: 4 })),
+          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', fontWeight: 700, color: c, width: 70, textAlign: 'right' } }, fmtPct(x.chg)),
+          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary, width: 84, textAlign: 'right', fontSize: 10 } }, 'V ' + (x.vol >= 1e9 ? (x.vol / 1e9).toFixed(1) + 'B' : x.vol >= 1e6 ? (x.vol / 1e6).toFixed(1) + 'M' : (x.vol / 1e3).toFixed(0) + 'K'))
+        );
+      })
     )
   );
 }
@@ -1154,8 +1233,31 @@ function App() {
   const [losers, setLosers] = useState([]);
   const [search, setSearch] = useState('');
   const [chartSymbol, setChartSymbol] = useState('BTC');
+  const [modeBusy, setModeBusy] = useState(false);
   const pendingTermRef = useRef(null);
   const setTerminalCommand = (cmd) => { pendingTermRef.current = cmd; setTab('terminal'); };
+  const onModeToggle = async (mode) => {
+    if (modeBusy) return;
+    setModeBusy(true);
+    try {
+      const r = await fetch(`${API}/delta/mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({ mode }),
+      });
+      const d = await r.json();
+      if (r.ok && d && d.status === 'ok') {
+        setHealth(Object.assign({}, health || {}, { mode: d.mode }));
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.ping();
+      } else {
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+        alert(d && d.error ? d.error : 'Mode switch failed');
+      }
+    } catch (e) {
+      if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+      alert('Mode switch failed: ' + e.message);
+    } finally { setModeBusy(false); }
+  };
 
   useEffect(() => {
     const poll = async () => {
@@ -1252,7 +1354,7 @@ function App() {
       )
     ),
     React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto' } },
-      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol }),
+      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }),
       tab === 'options' && React.createElement(OptionsView, null),
       tab === 'strategies' && React.createElement(StrategiesView, null),
       tab === 'calendar' && React.createElement(CalendarView, null),
