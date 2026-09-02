@@ -5,10 +5,9 @@ from __future__ import annotations
 import sys
 import json
 import itertools
-import itertools
 import argparse
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Callable, Optional
 from datetime import datetime
 
 import numpy as np
@@ -20,6 +19,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agent_system.backtest.indicators import calculate_all_indicators
 from agent_system.backtest.strategy import SuperTrendBBStrategy
+
+# Try to import Optuna for Bayesian optimization
+try:
+    import optuna
+    OPTUNA_AVAILABLE = True
+except ImportError:
+    OPTUNA_AVAILABLE = False
 
 
 def load_candles_from_json(symbol: str, timeframe: str, data_dir: str = None) -> pd.DataFrame:
@@ -94,11 +100,88 @@ def run_backtest(df: pd.DataFrame, strategy_class, params: Dict[str, Any],
     }
 
 
+def optimize_parameters_bayesian(df: pd.DataFrame, symbol: str, timeframe: str,
+                                  cash: float = 10000, n_trials: int = 100,
+                                  top_n: int = 10,
+                                  metric: str = 'sharpe') -> List[Dict[str, Any]]:
+    """
+    Optimize strategy parameters using Bayesian optimization (Optuna).
+    
+    Args:
+        df: OHLCV DataFrame
+        symbol: Symbol name (for logging)
+        timeframe: Timeframe (for logging)
+        cash: Starting capital
+        n_trials: Number of optimization trials
+        top_n: Number of top results to return
+        metric: Metric to optimize ('sharpe', 'return', 'profit_factor')
+    
+    Returns:
+        List of top N parameter sets with results
+    """
+    if not OPTUNA_AVAILABLE:
+        print("Optuna not available, falling back to grid search")
+        return optimize_parameters(df, symbol, timeframe, cash=cash, top_n=top_n)
+    
+    print(f"\n{'='*70}")
+    print(f"BAYESIAN OPTIMIZATION {symbol} {timeframe} (metric: {metric})")
+    print(f"{'='*70}")
+    print(f"Data points: {len(df)}")
+    print(f"Date range: {df.index[0]} to {df.index[-1]}")
+    print(f"Trials: {n_trials}")
+    
+    def objective(trial: optuna.Trial) -> float:
+        params = {
+            'st_atr_period': trial.suggest_int('st_atr_period', 7, 20),
+            'st_multiplier': trial.suggest_float('st_multiplier', 1.5, 4.0),
+            'bb_period': trial.suggest_int('bb_period', 10, 30),
+            'bb_std': trial.suggest_float('bb_std', 1.0, 3.0),
+            'atr_period': trial.suggest_int('atr_period', 7, 25),
+            'atr_sl_multiplier': trial.suggest_float('atr_sl_multiplier', 0.5, 3.0),
+            'atr_tp_multiplier': trial.suggest_float('atr_tp_multiplier', 1.5, 4.0),
+        }
+        
+        try:
+            result = run_backtest(df, SuperTrendBBStrategy, params, cash=cash, verbose=False)
+            
+            if metric == 'sharpe':
+                return result['sharpe']
+            elif metric == 'return':
+                return result['total_return']
+            elif metric == 'profit_factor':
+                return result['profit_factor']
+            else:
+                return result['sharpe']
+        except Exception:
+            return -999.0  # Bad result for failed trials
+    
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
+    
+    print(f"\nBest trial:")
+    print(f"  Value: {study.best_value:.4f}")
+    print(f"  Params: {study.best_params}")
+    
+    # Get top N trials
+    trials = study.trials_dataframe()
+    trials = trials[trials['value'] != -999.0].sort_values('value', ascending=False)
+    
+    results = []
+    for _, row in trials.head(top_n).iterrows():
+        params = {col.replace('params_', ''): row[col] for col in row.index if col.startswith('params_')}
+        # Run backtest with these params to get full results
+        result = run_backtest(df, SuperTrendBBStrategy, params, cash=cash, verbose=False)
+        results.append(result)
+    
+    return results
+
+
 def optimize_parameters(df: pd.DataFrame, symbol: str, timeframe: str,
                         cash: float = 10000, top_n: int = 10,
-                        param_grid: Dict[str, List[Any]] = None) -> List[Dict[str, Any]]:
+                        param_grid: Dict[str, List[Any]] = None,
+                        method: str = 'grid') -> List[Dict[str, Any]]:
     """
-    Optimize strategy parameters using grid search.
+    Optimize strategy parameters using grid search or Bayesian optimization.
     
     Args:
         df: OHLCV DataFrame
@@ -107,12 +190,16 @@ def optimize_parameters(df: pd.DataFrame, symbol: str, timeframe: str,
         cash: Starting capital
         top_n: Number of top results to return
         param_grid: Optional custom parameter grid for optimization
+        method: Optimization method ('grid' or 'bayesian')
     
     Returns:
         List of top N parameter sets with results
     """
+    if method == 'bayesian' and OPTUNA_AVAILABLE:
+        return optimize_parameters_bayesian(df, symbol, timeframe, cash=cash, top_n=top_n)
+    
     print(f"\n{'='*70}")
-    print(f"OPTIMIZING {symbol} {timeframe}")
+    print(f"OPTIMIZING {symbol} {timeframe} (method: {method})")
     print(f"{'='*70}")
     print(f"Data points: {len(df)}")
     print(f"Date range: {df.index[0]} to {df.index[-1]}")
@@ -183,7 +270,8 @@ def print_results(results: List[Dict[str, Any]], symbol: str, timeframe: str, to
 
 def run_all_timeframes(symbols: List[str], timeframes: List[str],
                        optimize_on: List[str] = None, cash: float = 10000,
-                       param_grid: Dict[str, List[Any]] = None):
+                       param_grid: Dict[str, List[Any]] = None,
+                       method: str = 'grid'):
     """
     Run backtests on all symbol/timeframe combinations.
     
@@ -193,6 +281,7 @@ def run_all_timeframes(symbols: List[str], timeframes: List[str],
         optimize_on: List of timeframes to run optimization on (default: all)
         cash: Starting capital
         param_grid: Optional custom parameter grid for optimization
+        method: Optimization method ('grid' or 'bayesian')
     """
     if optimize_on is None:
         optimize_on = timeframes
@@ -210,7 +299,7 @@ def run_all_timeframes(symbols: List[str], timeframes: List[str],
                 
                 if timeframe in optimize_on:
                     # Run full optimization
-                    results = optimize_parameters(df, symbol, timeframe, cash=cash, param_grid=param_grid)
+                    results = optimize_parameters(df, symbol, timeframe, cash=cash, param_grid=param_grid, method=method)
                     all_results[symbol][timeframe] = results
                     
                     if results:
@@ -251,6 +340,9 @@ def main():
     parser.add_argument("--optimize-on", type=str, default="15m,1h", help="Comma-separated timeframes to optimize on")
     parser.add_argument("--cash", type=float, default=10000, help="Starting capital")
     parser.add_argument("--config", type=str, default=None, help="JSON file containing param_grid")
+    parser.add_argument("--method", type=str, default="grid", choices=["grid", "bayesian"], help="Optimization method: grid or bayesian (requires optuna)")
+    parser.add_argument("--trials", type=int, default=100, help="Number of trials for Bayesian optimization")
+    parser.add_argument("--metric", type=str, default="sharpe", choices=["sharpe", "return", "profit_factor"], help="Metric to optimize for Bayesian optimization")
     
     args = parser.parse_args()
     
@@ -271,13 +363,18 @@ def main():
     print(f"Timeframes: {', '.join(timeframes)}")
     print(f"Optimizing on: {', '.join(optimize_on)}")
     print(f"Starting Capital: ${cash:,.2f}")
+    print(f"Optimization Method: {args.method}")
+    if args.method == "bayesian":
+        print(f"Trials: {args.trials}")
+        print(f"Metric: {args.metric}")
     if param_grid:
         print(f"Using custom config grid: {args.config}")
     
     all_results, best_params = run_all_timeframes(symbols, timeframes, 
                                                     optimize_on=optimize_on, 
                                                     cash=cash,
-                                                    param_grid=param_grid)
+                                                    param_grid=param_grid,
+                                                    method=args.method)
     
     # Save results
     output_dir = Path(__file__).parent / "results"

@@ -7,6 +7,9 @@ export declare class TradingEngine {
     private riskMetrics;
     private isRunning;
     private updateInterval;
+    private equityCurve;
+    private closedTrades;
+    private startingCapital;
     private callbacks;
     constructor(managerConfig?: Partial<AgentConfig>);
     private initializeRiskMetrics;
@@ -20,6 +23,9 @@ export declare class TradingEngine {
     stop(): Promise<void>;
     processMarketData(data: MarketData): Promise<AgentDecision | null>;
     private updateRiskMetrics;
+    private calculateVaR95;
+    private calculateSharpeRatio;
+    private updateTradeMetrics;
     private handleDecision;
     private createSignalFromDecision;
     private handlePositionReduction;

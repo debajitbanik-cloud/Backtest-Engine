@@ -335,7 +335,7 @@ class MultiTimeframeConfluenceAgent(BaseAgent):
             if len(candles) < 20:
                 continue
             
-            volumes = [c["volume"] for c in candles[-20:]]
+            volumes = [c["volume"] for c in list(candles)[-20:]]
             avg_vol = np.mean(volumes[:-1])
             recent_vol = volumes[-1]
             

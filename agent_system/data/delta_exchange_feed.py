@@ -13,9 +13,13 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Callable, Set
 from enum import Enum
 from urllib.parse import urlencode
+import socket
 
 import aiohttp
 import websockets
+from websockets import State
+
+from core.event_bus import Event, EventType, EventBus
 
 
 class DeltaEnvironment(Enum):
@@ -31,9 +35,9 @@ class DeltaConfig:
     api_secret: str = ""
     environment: DeltaEnvironment = DeltaEnvironment.PRODUCTION
     ws_url: str = "wss://socket.delta.exchange"
-    rest_url: str = "https://api.delta.exchange"
+    rest_url: str = "https://api.india.delta.exchange"
     testnet_ws_url: str = "wss://socket.testnet.delta.exchange"
-    testnet_rest_url: str = "https://api.testnet.delta.exchange"
+    testnet_rest_url: str = "https://cdn-ind.testnet.deltaex.org"
     reconnect_interval: int = 5
     max_reconnect_attempts: int = 10
     ping_interval: int = 20
@@ -163,9 +167,18 @@ class DeltaExchangeFeed:
             hashlib.sha256
         ).hexdigest()
     
+    def _ws_connected(self) -> bool:
+        """Return True if the WebSocket connection is open."""
+        if not self._ws:
+            return False
+        try:
+            return self._ws.state is not State.CLOSED
+        except Exception:
+            return True
+
     async def _send(self, message: Dict) -> None:
         """Send message over WebSocket."""
-        if self._ws and not self._ws.closed:
+        if self._ws_connected():
             await self._ws.send(json.dumps(message))
     
     async def _message_handler(self) -> None:
@@ -271,7 +284,7 @@ class DeltaExchangeFeed:
         for symbol in symbols:
             channel = f"ticker.{symbol}"
             self._subscriptions.add(channel)
-            if self._ws and not self._ws.closed:
+            if self._ws_connected():
                 await self._send({"type": "subscribe", "channel": channel})
     
     async def subscribe_candles(self, symbols: List[str], timeframe: str = "1m") -> None:
@@ -279,7 +292,7 @@ class DeltaExchangeFeed:
         for symbol in symbols:
             channel = f"candle.{timeframe}.{symbol}"
             self._subscriptions.add(channel)
-            if self._ws and not self._ws.closed:
+            if self._ws_connected():
                 await self._send({"type": "subscribe", "channel": channel})
     
     async def subscribe_orderbook(self, symbols: List[str], depth: int = 20) -> None:
@@ -287,7 +300,7 @@ class DeltaExchangeFeed:
         for symbol in symbols:
             channel = f"orderbook.{depth}.{symbol}"
             self._subscriptions.add(channel)
-            if self._ws and not self._ws.closed:
+            if self._ws_connected():
                 await self._send({"type": "subscribe", "channel": channel})
     
     async def subscribe_trades(self, symbols: List[str]) -> None:
@@ -295,14 +308,14 @@ class DeltaExchangeFeed:
         for symbol in symbols:
             channel = f"trade.{symbol}"
             self._subscriptions.add(channel)
-            if self._ws and not self._ws.closed:
+            if self._ws_connected():
                 await self._send({"type": "subscribe", "channel": channel})
     
     async def _ping_loop(self) -> None:
         """Send periodic pings to keep connection alive."""
         while self._running:
             await asyncio.sleep(self.config.ping_interval)
-            if self._ws and not self._ws.closed:
+            if self._ws_connected():
                 await self._send({"type": "ping"})
     
     async def _schedule_reconnect(self) -> None:
@@ -355,12 +368,12 @@ class DeltaExchangeFeed:
                 CandleData(
                     symbol=symbol,
                     timeframe=resolution,
-                    open=float(c["o"]),
-                    high=float(c["h"]),
-                    low=float(c["l"]),
-                    close=float(c["c"]),
-                    volume=float(c["v"]),
-                    timestamp=datetime.fromtimestamp(c["t"]),
+                    open=float(c.get("open", c.get("o", 0))),
+                    high=float(c.get("high", c.get("h", 0))),
+                    low=float(c.get("low", c.get("l", 0))),
+                    close=float(c.get("close", c.get("c", 0))),
+                    volume=float(c.get("volume", c.get("v", 0))),
+                    timestamp=datetime.fromtimestamp(c.get("time", c.get("t", 0))),
                     closed=True
                 )
                 for c in result
@@ -404,7 +417,7 @@ class DeltaExchangeFeed:
         """Close connections."""
         self._running = False
         
-        if self._ws and not self._ws.closed:
+        if self._ws_connected():
             await self._ws.close()
         
         if self._session:
@@ -420,7 +433,7 @@ class DeltaDataFeedAgent:
     
     def __init__(self, config: DeltaConfig, event_bus: EventBus = None):
         self.feed = DeltaExchangeFeed(config)
-        self.event_bus = event_bus or event_bus
+        self.event_bus = event_bus
         self._symbols: List[str] = []
         self._timeframes: List[str] = ["1m", "5m", "15m", "1h"]
     
@@ -437,6 +450,26 @@ class DeltaDataFeedAgent:
         await self.feed.subscribe_ticker(symbols)
         for tf in self._timeframes:
             await self.feed.subscribe_candles(symbols, tf)
+        
+        # Seed historical candles so agent history deques fill up
+        await self._seed_history(symbols)
+
+    async def _seed_history(self, symbols: List[str]) -> None:
+        """Fetch and publish historical candles to seed agent history."""
+        timeframe_minutes = {"1m": 1, "5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}
+        for symbol in symbols:
+            for tf in self._timeframes:
+                minutes = timeframe_minutes.get(tf, 60)
+                end = int(time.time())
+                start = end - (400 * minutes * 60)
+                try:
+                    candles = await self.feed.get_historical_candles(symbol, tf, start, end)
+                    for candle in candles:
+                        await self._on_candle(candle)
+                    print(f"Seeded {len(candles)} {tf} candles for {symbol}")
+                except Exception as e:
+                    print(f"History seed error for {symbol} {tf}: {e}")
+                    await asyncio.sleep(1)
     
     async def _on_ticker(self, data: MarketData) -> None:
         """Publish ticker to event bus."""

@@ -9,6 +9,7 @@ const PositionSizingAgent_1 = require("./PositionSizingAgent");
 const StyleManagingAgent_1 = require("./StyleManagingAgent");
 const RiskCheckingAgent_1 = require("./RiskCheckingAgent");
 const TradeMasterAgent_1 = require("./TradeMasterAgent");
+const TimeframeRecommendationAgent_1 = require("./TimeframeRecommendationAgent");
 class ManagerAgent extends BaseAgent_1.BaseAgent {
     agents = new Map();
     agentOrder = [];
@@ -21,12 +22,13 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
         const params = {
             ...config.parameters,
             decisionWeights: config.parameters.decisionWeights ?? {
-                leverage_adjustment_agent: 0.15,
+                leverage_adjustment_agent: 0.12,
                 bias_determining_agent: 0.15,
                 multitimeframe_confluence_agent: 0.2,
-                position_sizing_agent: 0.1,
-                style_managing_agent: 0.15,
-                risk_checking_agent: 0.25,
+                position_sizing_agent: 0.08,
+                style_managing_agent: 0.12,
+                risk_checking_agent: 0.2,
+                timeframe_recommendation_agent: 0.13,
             },
             consensusThreshold: config.parameters.consensusThreshold ?? 0.6,
             minAgentsForConsensus: config.parameters.minAgentsForConsensus ?? 3,
@@ -90,6 +92,22 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
                 priority: 7,
                 parameters: { reportTime: '00:00' },
             },
+            {
+                id: 'timeframe_recommendation_agent',
+                name: 'Timeframe Recommendation Agent',
+                enabled: true,
+                priority: 8,
+                parameters: {
+                    availableTimeframes: ['1m', '5m', '15m', '1h', '4h'],
+                    preferredTimeframes: ['15m', '1h'],
+                    minConfidence: 0.55,
+                    confluenceWeight: 0.35,
+                    biasWeight: 0.30,
+                    riskWeight: 0.20,
+                    modeWeight: 0.15,
+                    maxHistory: 100,
+                },
+            },
         ];
         for (const agentConfig of agentConfigs) {
             let agent;
@@ -114,6 +132,9 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
                     break;
                 case 'trade_master_agent':
                     agent = new TradeMasterAgent_1.TradeMasterAgent(agentConfig);
+                    break;
+                case 'timeframe_recommendation_agent':
+                    agent = new TimeframeRecommendationAgent_1.TimeframeRecommendationAgent(agentConfig);
                     break;
                 default:
                     continue;
@@ -202,7 +223,7 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
         return { action: maxAction[0], confidence, reasoning };
     }
     makeFinalDecision(consensus, decisions, positions, riskMetrics) {
-        const styleAgent = this.agents.get('style_managing_agent');
+        const styleAgent = this.getSubAgent('style_managing_agent');
         const currentMode = styleAgent?.getCurrentMode() || 'swing';
         let finalAction = consensus.action;
         let finalConfidence = consensus.confidence;
@@ -213,7 +234,7 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
             finalReasoning = `Consensus below threshold (${this.config.parameters.consensusThreshold}). Defaulting to HOLD. ${consensus.reasoning}`;
         }
         if (finalAction === 'buy' || finalAction === 'sell') {
-            const sizingAgent = this.agents.get('position_sizing_agent');
+            const sizingAgent = this.getSubAgent('position_sizing_agent');
             const sizingDecision = decisions.find(d => d.agentId === 'position_sizing_agent');
             if (sizingDecision && sizingDecision.parameters) {
                 finalReasoning += ` | Position sizing: ${sizingDecision.reasoning}`;
@@ -255,7 +276,7 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
         });
     }
     applyOptimizations() {
-        const tradeMaster = this.agents.get('trade_master_agent');
+        const tradeMaster = this.getSubAgent('trade_master_agent');
         if (tradeMaster) {
             const optimizations = tradeMaster.getPendingOptimizations();
             for (const opt of optimizations) {
@@ -320,7 +341,7 @@ class ManagerAgent extends BaseAgent_1.BaseAgent {
         return false;
     }
     getSystemStatus() {
-        const styleAgent = this.agents.get('style_managing_agent');
+        const styleAgent = this.getSubAgent('style_managing_agent');
         return {
             isHalted: this.isTradingHalted,
             haltReason: this.haltReason,

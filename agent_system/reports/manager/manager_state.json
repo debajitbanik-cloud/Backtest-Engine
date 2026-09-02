@@ -1,5 +1,62 @@
 {
   "system_mode": "normal",
   "tuning_history": [],
-  "agent_performance": {}
+  "agent_performance": {
+    "RiskCheckingAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:28.947011"
+    },
+    "LeverageAdjustmentAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.943890"
+    },
+    "BiasDeterminingAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.942517"
+    },
+    "MultiTimeframeConfluenceAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.942637"
+    },
+    "PositionSizingAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.942811"
+    },
+    "StyleManagingAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.942891"
+    },
+    "TradeMasterAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.943073"
+    },
+    "TimeframeRecommendationAgent": {
+      "metric_name": "health",
+      "current_value": 1.0,
+      "target_value": 1.0,
+      "trend": "stable",
+      "last_updated": "2026-08-19T03:45:23.943259"
+    }
+  }
 }

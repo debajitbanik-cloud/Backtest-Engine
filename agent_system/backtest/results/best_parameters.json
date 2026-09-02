@@ -1,4 +1,89 @@
 {
-  "SOLUSDT": {},
-  "XAUTUSDT": {}
+  "SOLUSDT": {
+    "3m": {
+      "st_atr_period": 7,
+      "st_multiplier": 2.5,
+      "bb_period": 15,
+      "bb_std": 1.5,
+      "atr_period": 7,
+      "atr_sl_multiplier": 1.5,
+      "atr_tp_multiplier": 2.5
+    },
+    "5m": {
+      "st_atr_period": 10,
+      "st_multiplier": 2.5,
+      "bb_period": 15,
+      "bb_std": 2.0,
+      "atr_period": 10,
+      "atr_sl_multiplier": 1.5,
+      "atr_tp_multiplier": 2.5
+    },
+    "15m": {
+      "st_atr_period": 14,
+      "st_multiplier": 2.5,
+      "bb_period": 15,
+      "bb_std": 1.5,
+      "atr_period": 10,
+      "atr_sl_multiplier": 2.0,
+      "atr_tp_multiplier": 3.0
+    },
+    "1h": {
+      "st_atr_period": 14,
+      "st_multiplier": 2.5,
+      "bb_period": 25,
+      "bb_std": 2.0,
+      "atr_period": 20,
+      "atr_sl_multiplier": 2.0,
+      "atr_tp_multiplier": 3.0
+    }
+  },
+  "XAUTUSDT": {
+    "3m": {
+      "st_atr_period": 7,
+      "st_multiplier": 2.0,
+      "bb_period": 15,
+      "bb_std": 1.5,
+      "atr_period": 7,
+      "atr_sl_multiplier": 1.0,
+      "atr_tp_multiplier": 2.0
+    },
+    "5m": {
+      "st_atr_period": 10,
+      "st_multiplier": 2.0,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "atr_period": 10,
+      "atr_sl_multiplier": 1.5,
+      "atr_tp_multiplier": 2.5
+    },
+    "15m": {
+      "st_atr_period": 10,
+      "st_multiplier": 2.0,
+      "bb_period": 25,
+      "bb_std": 2.0,
+      "atr_period": 14,
+      "atr_sl_multiplier": 1.5,
+      "atr_tp_multiplier": 2.5
+    },
+    "1h": {
+      "st_atr_period": 14,
+      "st_multiplier": 2.0,
+      "bb_period": 15,
+      "bb_std": 1.5,
+      "atr_period": 14,
+      "atr_sl_multiplier": 1.5,
+      "atr_tp_multiplier": 3.0
+    }
+  },
+  "BTCUSDT": {
+    "15m": {
+      "st_atr_period": 14,
+      "st_multiplier": 2.5,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "atr_period": 14,
+      "atr_sl_multiplier": 2.0,
+      "atr_tp_multiplier": 3.0
+    }
+  }
 }

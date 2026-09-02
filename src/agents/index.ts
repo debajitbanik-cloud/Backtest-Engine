@@ -6,4 +6,5 @@ export { PositionSizingAgent } from './PositionSizingAgent';
 export { StyleManagingAgent } from './StyleManagingAgent';
 export { RiskCheckingAgent } from './RiskCheckingAgent';
 export { TradeMasterAgent } from './TradeMasterAgent';
+export { TimeframeRecommendationAgent } from './TimeframeRecommendationAgent';
 export { ManagerAgent } from './ManagerAgent';

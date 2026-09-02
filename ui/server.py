@@ -9,9 +9,9 @@ async def serve_ui(request: web.Request) -> web.Response:
     """Serve UI files."""
     file_path = request.match_info.get('path', 'index.html')
     ui_dir = Path(__file__).parent
-    target = ui_dir / file_path
+    target = (ui_dir / file_path).resolve()
     
-    if not target.exists() or not target.is_file():
+    if not target.is_relative_to(ui_dir.resolve()) or not target.exists() or not target.is_file():
         target = ui_dir / 'index.html'
     
     content_type = 'text/html'

@@ -3,6 +3,8 @@ pyyaml>=6.0
 aiohttp>=3.9.0
 websockets>=12.0
 numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.13.0
 
 # Free crypto data feed
 ccxt>=4.0.0
@@ -13,8 +15,47 @@ ccxt>=4.0.0
 # Delta Exchange specific
 # No additional deps needed - uses aiohttp/websockets
 
+# Database
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
+# Redis for event backbone and caching
+redis>=5.0.0
+
+# Monitoring
+prometheus-client>=0.19.0
+
+# Model providers
+httpx>=0.28.0
+litellm>=1.0.0
+
+# Google ADK (Agent Development Kit)
+google-adk>=2.0.0
+
+# MCP (Model Context Protocol)
+mcp>=1.12.0
+
+# MinIO for object storage
+minio>=7.2.0
+
 # Development
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 black>=23.0.0
 ruff>=0.1.0
+
+# Backtesting & Research
+backtrader>=1.9.78
+yfinance>=0.2.44
+vectorbt>=0.28.0
+# qlib>=0.8.0  # Optional: install separately if needed (platform-specific)
+
+# Machine Learning
+scikit-learn>=1.5.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+
+# Visualization
+plotly>=5.0.0
+matplotlib>=3.8.0

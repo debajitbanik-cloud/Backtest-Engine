@@ -14,6 +14,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
+import socket
 
 import aiohttp
 import yaml
@@ -34,6 +35,97 @@ class DeltaCredentials:
     @property
     def has_auth(self) -> bool:
         return bool(self.api_key and self.api_secret)
+
+
+def diagnose_delta_error(error_code: str, environment: str = "production") -> Dict[str, Any]:
+    """Cloud-agent style diagnosis: explanation, likely causes, and fix steps."""
+    host = "cdn-ind.testnet.deltaex.org" if environment == "testnet" else "api.india.delta.exchange"
+    guides = {
+        "connected": {
+            "level": "success",
+            "title": "Connection successful",
+            "explanation": "Your API key and secret were accepted by Delta Exchange and live account data is available.",
+            "causes": [],
+            "steps": [
+                "You can now switch to Trading mode and view balance, positions, and run the selected strategy.",
+            ],
+        },
+        "connected_readonly": {
+            "level": "info",
+            "title": "Connected (read-only)",
+            "explanation": "Delta Exchange is reachable. No API key was provided, so the system is using public market data only.",
+            "causes": [],
+            "steps": [
+                "Enter your API key and secret below and click Connect & Test to enable Trading mode.",
+            ],
+        },
+        "delta_unreachable": {
+            "level": "error",
+            "title": "Delta Exchange API unreachable",
+            "explanation": "The bridge could not reach Delta's REST API. This is a network/connectivity issue, not an authentication problem.",
+            "causes": [
+                "No outbound internet access from this host/container.",
+                "Firewall or proxy blocking https://" + host,
+                "Temporary Delta outage or DNS failure.",
+            ],
+            "steps": [
+                "Verify reachability: curl -s https://" + host + "/v2/products?page_size=1",
+                "If running in Docker, ensure the container has network access (not --network=none) and DNS works.",
+                "Check any corporate firewall / VPN that may block the endpoint.",
+            ],
+        },
+        "unauthorized": {
+            "level": "error",
+            "title": "API key or secret rejected",
+            "explanation": (
+                "Delta Exchange returned an authentication failure. Importantly, Delta returns the SAME generic error "
+                "for a wrong key/secret, an inactive key, AND an IP-address whitelist mismatch -- so the exact cause "
+                "cannot be determined from the response alone. Walk through the checklist below."
+            ),
+            "causes": [
+                "The API key or secret was copied incorrectly (extra spaces, missing characters).",
+                "The key is not yet activated -- Delta often requires email confirmation after creation.",
+                "IP whitelist: your key is restricted to specific IPs and this host's IP is not on the list.",
+                "Environment mismatch: a Testnet key used against Production (or vice-versa) -- they are separate.",
+                "The key was deleted or regenerated on Delta's side.",
+            ],
+            "steps": [
+                "Re-copy the API key and secret exactly (no leading/trailing spaces), then test again.",
+                "Confirm the key matches the selected Environment (Production vs Testnet).",
+                "On Delta's API management page, check the key status and confirm any 'Activate' email.",
+                "For testing, set the IP whitelist to 0.0.0.0/0 (allow all), then tighten it after verifying.",
+                "Find this host's public IP and add it to the whitelist: https://api.ipify.org",
+                "If all else fails, create a fresh key and repeat the test.",
+            ],
+        },
+        "forbidden": {
+            "level": "error",
+            "title": "API key lacks permission",
+            "explanation": "Authentication succeeded but the key does not have permission for trading/account endpoints.",
+            "causes": [
+                "The key was created with read-only scope and cannot access wallet/positions.",
+                "Required permissions (read wallet / trade) were not enabled at creation.",
+            ],
+            "steps": [
+                "On Delta, edit the API key and enable 'Read Wallet' and 'Trade' permissions.",
+                "Create a new key with the required scopes and test again.",
+            ],
+        },
+        "no_keys": {
+            "level": "warn",
+            "title": "No credentials provided",
+            "explanation": "API key and secret are both required to enable Trading mode.",
+            "causes": ["One or both fields were left empty."],
+            "steps": ["Enter both your API key and secret, then click Connect & Test."],
+        },
+    }
+    return guides.get(error_code, {
+        "level": "error",
+        "title": "Unknown error",
+        "explanation": f"Unrecognized error code: {error_code}.",
+        "causes": [],
+        "steps": ["Check the bridge logs for details."],
+    })
 
 
 @dataclass
@@ -108,7 +200,7 @@ class DeltaAPIClient:
         self.credentials = credentials or DeltaCredentials()
         self._session: Optional[aiohttp.ClientSession] = None
         
-        self.production_rest = "https://api.delta.exchange"
+        self.production_rest = "https://api.india.delta.exchange"
         self.testnet_rest = "https://cdn-ind.testnet.deltaex.org"
         # Allow override from config
         self.rest_url_override: Optional[str] = None
@@ -139,14 +231,86 @@ class DeltaAPIClient:
         self.credentials.api_key = api_key
         self.credentials.api_secret = api_secret
         self.credentials.mode = DeltaAPIMode.TRADING
+
+    def set_credentials_full(self, api_key: str = "", api_secret: str = "", environment: str = "production", mode: str = "read_only") -> None:
+        """Set API credentials, environment and mode IN MEMORY only (no disk persistence)."""
+        self.credentials.api_key = api_key or ""
+        self.credentials.api_secret = api_secret or ""
+        if environment in ("production", "testnet"):
+            self.credentials.environment = environment
+        try:
+            self.credentials.mode = DeltaAPIMode(mode)
+        except ValueError:
+            self.credentials.mode = DeltaAPIMode.READ_ONLY
+
+    async def test_connection(self) -> Dict[str, Any]:
+        """Test Delta connectivity and authentication. Returns a structured diagnostic (no secrets)."""
+        result: Dict[str, Any] = {
+            "status": "unknown",
+            "connected": False,
+            "has_auth": self.credentials.has_auth,
+            "environment": self.credentials.environment,
+            "mode": self.credentials.mode,
+            "balance_preview": None,
+            "error_code": None,
+            "error_message": None,
+            "diagnostic": None,
+        }
+
+        # 1) Public connectivity test (no auth required)
+        try:
+            public = await self._get("/v2/products", {"page_size": 1})
+        except Exception as e:  # network/DNS failure
+            public = {"error": f"network: {str(e)}"}
+
+        if "error" in public:
+            result["status"] = "unreachable"
+            result["error_code"] = "delta_unreachable"
+            result["error_message"] = "Delta Exchange API is not reachable from this host."
+            result["diagnostic"] = diagnose_delta_error("delta_unreachable", self.credentials.environment)
+            return result
+
+        result["connected"] = True
+
+        # 2) No keys -> read-only connected
+        if not self.credentials.has_auth:
+            result["status"] = "connected_readonly"
+            result["diagnostic"] = diagnose_delta_error("connected_readonly", self.credentials.environment)
+            return result
+
+        # 3) Authenticated test
+        self.credentials.mode = DeltaAPIMode.TRADING
+        balance = await self.get_balance()
+        if isinstance(balance, dict) and "error" in balance:
+            err = balance.get("error", "")
+            if err == "unauthorized":
+                code = "unauthorized"
+            elif err in ("forbidden", "http_403"):
+                code = "forbidden"
+            else:
+                code = "unauthorized"
+            result["status"] = "auth_failed"
+            result["error_code"] = code
+            result["error_message"] = "Delta Exchange rejected the API key/secret."
+            result["diagnostic"] = diagnose_delta_error(code, self.credentials.environment)
+            self.credentials.mode = DeltaAPIMode.READ_ONLY
+            return result
+
+        result["status"] = "connected"
+        result["mode"] = self.credentials.mode
+        result["balance_preview"] = {
+            "total_equity": balance.get("total_equity"),
+            "available_margin": balance.get("available_margin"),
+            "currency": balance.get("currency", "USDT"),
+        }
+        result["diagnostic"] = diagnose_delta_error("connected", self.credentials.environment)
+        return result
     
     async def _ensure_session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
             import ssl
             ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            connector = aiohttp.TCPConnector(ssl=ssl_context, family=socket.AF_INET)
             self._session = aiohttp.ClientSession(connector=connector)
         return self._session
     
@@ -184,6 +348,7 @@ class DeltaAPIClient:
             "timestamp": timestamp,
             "signature": signature,
             "Content-Type": "application/json",
+            "User-Agent": "mt5-flow-trading-system/1.0",
         }
     
     async def _get(self, path: str, params: Dict = None, authenticated: bool = False) -> Dict:
@@ -202,7 +367,11 @@ class DeltaAPIClient:
         
         async with session.get(url, headers=headers) as resp:
             if resp.status == 401:
-                return {"error": "unauthorized", "message": "Invalid API credentials"}
+                try:
+                    detail = await resp.text()
+                except Exception:
+                    detail = ""
+                return {"error": "unauthorized", "detail": detail[:400]}
             if resp.status == 403:
                 return {"error": "forbidden", "message": "API key lacks permission for this endpoint"}
             if resp.status != 200:
@@ -267,7 +436,7 @@ class DeltaAPIClient:
         return data.get("result", {})
     
     async def get_tickers(self, symbols: List[str] = None) -> List[Dict]:
-        """Get tickers for multiple symbols."""
+        """Get tickers for multiple symbols. Uses batch endpoint when no symbols specified."""
         if symbols:
             results = []
             for sym in symbols:
@@ -276,41 +445,32 @@ class DeltaAPIClient:
                     results.append(ticker)
             return results
         
-        # Get all tickers via products
-        products = await self.get_products(100)
-        results = []
-        for p in products:
-            sym = p.get("symbol", "")
-            if sym:
-                ticker = await self.get_ticker(sym)
-                if ticker:
-                    results.append(ticker)
-        return results
+        data = await self._get("/v2/tickers")
+        if "error" in data:
+            return []
+        result = data.get("result", [])
+        return result if isinstance(result, list) else []
     
     async def get_top_gainers(self, limit: int = 10) -> List[Dict]:
-        """Get top gaining assets."""
-        products = await self.get_products(100)
+        """Get top gaining assets from batch ticker data."""
         tickers = await self.get_tickers()
         
-        # Combine product and ticker data
         combined = []
-        ticker_map = {t.get("symbol", ""): t for t in tickers if t}
-        
-        for p in products:
-            sym = p.get("symbol", "")
-            ticker = ticker_map.get(sym, {})
-            change = float(ticker.get("change_24h", 0) or 0)
-            volume = float(ticker.get("volume", 0) or 0)
+        for t in tickers:
+            if not isinstance(t, dict):
+                continue
+            sym = t.get("symbol", t.get("product_symbol", ""))
+            change = float(t.get("mark_change_24h", t.get("change_24h", 0)) or 0)
+            volume = float(t.get("turnover_usd", t.get("turnover", t.get("volume", 0))) or 0)
             
-            if volume > 0:  # Only include actively traded
+            if volume > 0:
                 combined.append({
                     "symbol": sym,
                     "change_24h": change,
                     "volume_24h": volume,
-                    "mark_price": float(ticker.get("close", ticker.get("mark_price", 0)) or 0),
-                    "funding_rate": float(p.get("funding_rate", 0) or 0),
-                    "open_interest": float(ticker.get("open_interest", 0) or 0),
-                    "max_leverage": float(p.get("max_leverage", 0) or 0),
+                    "mark_price": float(t.get("mark_price", t.get("close", 0)) or 0),
+                    "funding_rate": float(t.get("funding_rate", 0) or 0),
+                    "open_interest": float(t.get("oi_value_usd", 0) or 0),
                 })
         
         # Sort by 24h change descending
@@ -485,8 +645,29 @@ def load_delta_credentials() -> DeltaCredentials:
             environment = delta_cfg.get("environment", "production")
             rest_url = delta_cfg.get("rest_url")
     
-    # Override from environment
+    # Override from local .env file (gitignored; written by the UI "remember" option)
     import os
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        try:
+            with open(env_path, 'r') as ef:
+                for line in ef.read().splitlines():
+                    line = line.strip()
+                    if not line or line.startswith('#') or '=' not in line:
+                        continue
+                    k, v = line.split('=', 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k == "DELTA_API_KEY" and v:
+                        api_key = v
+                    elif k == "DELTA_API_SECRET" and v:
+                        api_secret = v
+                    elif k == "DELTA_ENVIRONMENT" and v:
+                        environment = v
+        except Exception:
+            pass
+
+    # Process environment takes final precedence
     api_key = os.environ.get("DELTA_API_KEY", api_key)
     api_secret = os.environ.get("DELTA_API_SECRET", api_secret)
     

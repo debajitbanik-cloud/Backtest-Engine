@@ -41,8 +41,13 @@ class ConfigLoader:
         self._load()
     
     def _load(self) -> None:
-        """Load configuration from YAML file."""
-        with open(self.config_path, 'r') as f:
+        """Load configuration from YAML file, falling back to settings.yaml.example."""
+        path = self.config_path
+        if not path.exists():
+            example = path.with_name(path.name + '.example')
+            if example.exists():
+                path = example
+        with open(path, 'r') as f:
             self._config = yaml.safe_load(f)
     
     def get_system_config(self) -> SystemConfig:

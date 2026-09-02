@@ -1,0 +1,88 @@
+# Caddyfile - Reverse proxy with automatic HTTPS
+{
+    admin off
+    # Email for Let's Encrypt (change to your email)
+    email your-email@example.com
+}
+
+# Main domain - replace with your domain
+trading.yourdomain.com {
+    # Proxy to trading app
+    reverse_proxy trading-app:8080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # WebSocket support for SSE
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket trading-app:8080 {
+        header_up Host {host}
+        header_up Upgrade {>Upgrade}
+        header_up Connection "upgrade"
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Rate limiting
+    rate_limit {
+        zone default 10r/s
+        key {remote}
+    }
+}
+
+# Admin UI subdomain
+ui.trading.yourdomain.com {
+    reverse_proxy trading-app:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Auth for admin UI (basic auth - replace with your credentials)
+    basicauth {
+        admin $2a$14$your_hashed_password_here
+    }
+}
+
+# Grafana
+grafana.trading.yourdomain.com {
+    reverse_proxy grafana:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# Prometheus (internal only, no public access)
+prometheus.trading.yourdomain.com {
+    reverse_proxy prometheus:9090
+    basicauth {
+        admin $2a$14$your_hashed_password_here
+    }
+}
+
+# MinIO console
+minio.trading.yourdomain.com {
+    reverse_proxy minio:9001 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    basicauth {
+        minioadmin $2a$14$your_hashed_password_here
+    }
+}

@@ -24,14 +24,18 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.5.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "eslint": "^8.55.0",
     "jest": "^29.7.0",
     "prettier": "^3.1.0",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@openrouter/sdk": "^1.2.33"
   }
 }

@@ -7,6 +7,7 @@ import asyncio
 import signal
 import sys
 import os
+from decimal import Decimal
 from pathlib import Path
 
 # Add project root and parent to path
@@ -31,6 +32,16 @@ from agents.timeframe_recommendation_agent import TimeframeRecommendationAgent
 from data.delta_exchange_feed import DeltaDataFeedAgent, DeltaConfig, DeltaEnvironment
 from data.free_crypto_feed import FreeCryptoFeedAgent, FreeFeedConfig
 from data.file_data_feed import FileDataFeedAgent
+from data.ingestion import DeltaIngestion, get_event_backbone, get_normalizer
+from execution.contracts import (
+    PortfolioState,
+    RiskLimits,
+    adapter_registry,
+    Venue,
+)
+from execution.engine import ExecutionEngine, ExecutionConfig, DefaultRiskOverlay, get_execution_engine
+from execution.adapters.delta_adapter import DeltaAdapter
+from execution.adapters.mt5_adapter import MT5Adapter, MT5_AVAILABLE
 from bridge.python_bridge import PythonBridge, BridgeConfig
 import sys
 sys.path.append(str(Path(__file__).parent.parent / 'ui'))
@@ -44,6 +55,10 @@ class TradingSystem:
         self.event_bus = event_bus
         self.registry = agent_registry
         self.data_feed: DeltaDataFeedAgent = None
+        self.delta_ingestion: DeltaIngestion = None
+        self.event_backbone = None
+        self.execution_engine: ExecutionEngine = None
+        self.portfolio_state: PortfolioState = None
         self.bridge: PythonBridge = None
         self._running = False
         self._shutdown_event = asyncio.Event()
@@ -52,9 +67,91 @@ class TradingSystem:
         """Initialize all agents and connections."""
         print("Initializing Trading Agent System...")
         
+        # Initialize event backbone (Redis Streams)
+        print("  Initializing event backbone...")
+        self.event_backbone = await get_event_backbone()
+        print("  Event backbone connected")
+        
+        # Initialize canonical normalizer
+        print("  Initializing canonical normalizer...")
+        get_normalizer()
+        print("  Normalizer ready")
+        
+        # Initialize Delta ingestion service (canonical pipeline)
+        print("  Initializing Delta ingestion...")
+        data_feed_config = config_loader.get_data_feed_config("delta_exchange")
+        self.delta_ingestion = DeltaIngestion(
+            api_key=data_feed_config.get("api_key", ""),
+            api_secret=data_feed_config.get("api_secret", ""),
+            base_url=data_feed_config.get("rest_url", "https://api.india.delta.exchange"),
+            ws_url=data_feed_config.get("ws_url", "wss://socket.delta.exchange"),
+            symbols=data_feed_config.get("symbols", ["BTCUSDT", "ETHUSDT", "SOLUSDT"]),
+            timeframes=data_feed_config.get("timeframes", ["1m", "5m", "15m", "1h", "4h"]),
+            event_backbone=self.event_backbone,
+        )
+        await self.delta_ingestion.initialize()
+        print("  Delta ingestion ready")
+        
+        # Initialize Execution Engine
+        print("  Initializing execution engine...")
+        trading_config = config_loader.get_trading_config()
+        delta_config = config_loader.get_data_feed_config("delta_exchange")
+        
+        # Create portfolio state with risk limits
+        risk_limits = RiskLimits(
+            max_portfolio_drawdown=Decimal(str(trading_config.get("max_drawdown", "0.10"))),
+            max_daily_loss=Decimal(str(trading_config.get("max_daily_loss", "0.03"))),
+            max_position_size_pct=Decimal(str(trading_config.get("max_position_pct", "0.20"))),
+            max_leverage=Decimal(str(trading_config.get("max_leverage", "20.0"))),
+        )
+        
+        self.portfolio_state = PortfolioState(
+            positions={},
+            total_equity=Decimal("0"),
+            available_margin=Decimal("0"),
+            used_margin=Decimal("0"),
+            daily_pnl=Decimal("0"),
+            open_orders=[],
+            risk_limits=risk_limits,
+        )
+        
+        # Register Delta adapter
+        delta_adapter = DeltaAdapter(
+            api_key=delta_config.get("api_key", ""),
+            api_secret=delta_config.get("api_secret", ""),
+            base_url=delta_config.get("rest_url", "https://api.india.delta.exchange"),
+            ws_url=delta_config.get("ws_url", "wss://socket.delta.exchange"),
+        )
+        adapter_registry.register(delta_adapter)
+        
+        # Register MT5 adapter if available
+        if MT5_AVAILABLE:
+            mt5_config = config_loader.get_data_feed_config("mt5")
+            mt5_adapter = MT5Adapter(
+                login=mt5_config.get("login", 0),
+                password=mt5_config.get("password", ""),
+                server=mt5_config.get("server", ""),
+                path=mt5_config.get("path"),
+            )
+            adapter_registry.register(mt5_adapter)
+            print("  MT5 adapter registered")
+        
+        # Create execution engine
+        self.execution_engine = get_execution_engine(
+            config=ExecutionConfig(
+                default_venue=Venue.DELTA,
+                enable_reconciliation=True,
+                reconciliation_interval_seconds=30,
+            ),
+            risk_overlay=DefaultRiskOverlay(risk_limits),
+        )
+        
+        # Initialize execution engine
+        await self.execution_engine.initialize(self.portfolio_state)
+        print("  Execution engine ready")
+        
         # Load configurations
         agent_configs = config_loader.get_all_agent_configs()
-        trading_config = config_loader.get_trading_config()
         data_feed_config = config_loader.get_data_feed_config("delta_exchange")
         free_crypto_config = config_loader.get_data_feed_config("free_crypto")
         
@@ -197,7 +294,7 @@ class TradingSystem:
                 api_secret=data_feed_config.get("api_secret", ""),
                 environment=DeltaEnvironment(data_feed_config.get("environment", "production")),
                 ws_url=data_feed_config.get("ws_url", "wss://socket.delta.exchange"),
-                rest_url=data_feed_config.get("rest_url", "https://api.delta.exchange"),
+                rest_url=data_feed_config.get("rest_url", "https://api.india.delta.exchange"),
             )
             self.data_feed = DeltaDataFeedAgent(delta_config, self.event_bus)
             symbols = trading_config.get("symbols", ["BTCUSDT", "ETHUSDT"])
@@ -224,7 +321,7 @@ class TradingSystem:
         # Start bridge server for TypeScript integration
         bridge_config = BridgeConfig(
             host="127.0.0.1",
-            port=8080,
+            port=8088,
             shared_data_dir="./data/shared"
         )
         self.bridge = PythonBridge(bridge_config, self.event_bus)
@@ -236,10 +333,20 @@ class TradingSystem:
         self._running = True
     
     async def start(self) -> None:
-        """Start all agents, then start data feed."""
+        """Start all agents, then start data feed and ingestion."""
         print("Starting all agents...")
         await self.registry.start_all()
         print("All agents started")
+        
+        # Start execution engine
+        if self.execution_engine:
+            await self.execution_engine.start()
+            print("Execution engine started")
+        
+        # Start Delta ingestion pipeline (canonical data pipeline)
+        if self.delta_ingestion:
+            await self.delta_ingestion.start()
+            print("Delta ingestion pipeline started")
         
         # Start data feed AFTER agents are subscribed
         if self.data_feed:
@@ -255,6 +362,21 @@ class TradingSystem:
         """Stop all agents gracefully."""
         print("Stopping Trading Agent System...")
         self._running = False
+        
+        # Stop execution engine
+        if self.execution_engine:
+            await self.execution_engine.stop()
+            print("Execution engine stopped")
+        
+        # Stop Delta ingestion pipeline
+        if self.delta_ingestion:
+            await self.delta_ingestion.stop()
+            print("Delta ingestion pipeline stopped")
+        
+        # Stop event backbone
+        if self.event_backbone:
+            await self.event_backbone.disconnect()
+            print("Event backbone disconnected")
         
         # Stop data feed
         if self.data_feed:

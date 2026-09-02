@@ -153,3 +153,27 @@ export interface StyleConfig {
     minConfidence: number;
   };
 }
+
+export interface TimeframeRecommendation {
+  symbol: string;
+  recommendedTimeframe: Timeframe;
+  direction: 'long' | 'short' | 'flat';
+  confidence: number;
+  confluenceScore: number;
+  biasScore: number;
+  riskScore: number;
+  alignment: Record<string, string>;
+  reasoning: string[];
+  timestamp: number;
+}
+
+export interface TimeframeRecommendationConfig {
+  availableTimeframes: Timeframe[];
+  preferredTimeframes: Timeframe[];
+  minConfidence: number;
+  confluenceWeight: number;
+  biasWeight: number;
+  riskWeight: number;
+  modeWeight: number;
+  maxHistory: number;
+}

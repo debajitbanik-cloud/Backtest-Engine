@@ -7,6 +7,18 @@ import { PositionSizingAgent } from './PositionSizingAgent';
 import { StyleManagingAgent } from './StyleManagingAgent';
 import { RiskCheckingAgent } from './RiskCheckingAgent';
 import { TradeMasterAgent } from './TradeMasterAgent';
+import { TimeframeRecommendationAgent } from './TimeframeRecommendationAgent';
+
+interface AgentTypeMap {
+  leverage_adjustment_agent: LeverageAdjustmentAgent;
+  bias_determining_agent: BiasDeterminingAgent;
+  multitimeframe_confluence_agent: MultiTimeframeConfluenceAgent;
+  position_sizing_agent: PositionSizingAgent;
+  style_managing_agent: StyleManagingAgent;
+  risk_checking_agent: RiskCheckingAgent;
+  trade_master_agent: TradeMasterAgent;
+  timeframe_recommendation_agent: TimeframeRecommendationAgent;
+}
 
 export class ManagerAgent extends BaseAgent {
   private agents: Map<string, BaseAgent> = new Map();
@@ -21,12 +33,13 @@ export class ManagerAgent extends BaseAgent {
     const params = {
       ...config.parameters,
       decisionWeights: config.parameters.decisionWeights ?? {
-        leverage_adjustment_agent: 0.15,
+        leverage_adjustment_agent: 0.12,
         bias_determining_agent: 0.15,
         multitimeframe_confluence_agent: 0.2,
-        position_sizing_agent: 0.1,
-        style_managing_agent: 0.15,
-        risk_checking_agent: 0.25,
+        position_sizing_agent: 0.08,
+        style_managing_agent: 0.12,
+        risk_checking_agent: 0.2,
+        timeframe_recommendation_agent: 0.13,
       },
       consensusThreshold: config.parameters.consensusThreshold ?? 0.6,
       minAgentsForConsensus: config.parameters.minAgentsForConsensus ?? 3,
@@ -92,6 +105,22 @@ export class ManagerAgent extends BaseAgent {
         priority: 7,
         parameters: { reportTime: '00:00' },
       },
+      {
+        id: 'timeframe_recommendation_agent',
+        name: 'Timeframe Recommendation Agent',
+        enabled: true,
+        priority: 8,
+        parameters: {
+          availableTimeframes: ['1m', '5m', '15m', '1h', '4h'],
+          preferredTimeframes: ['15m', '1h'],
+          minConfidence: 0.55,
+          confluenceWeight: 0.35,
+          biasWeight: 0.30,
+          riskWeight: 0.20,
+          modeWeight: 0.15,
+          maxHistory: 100,
+        },
+      },
     ];
 
     for (const agentConfig of agentConfigs) {
@@ -118,6 +147,9 @@ export class ManagerAgent extends BaseAgent {
           break;
         case 'trade_master_agent':
           agent = new TradeMasterAgent(agentConfig);
+          break;
+        case 'timeframe_recommendation_agent':
+          agent = new TimeframeRecommendationAgent(agentConfig);
           break;
         default:
           continue;
@@ -226,7 +258,7 @@ export class ManagerAgent extends BaseAgent {
     positions: Position[],
     riskMetrics: RiskMetrics
   ): AgentDecision {
-    const styleAgent = this.agents.get('style_managing_agent') as any;
+    const styleAgent = this.getSubAgent('style_managing_agent');
     const currentMode = styleAgent?.getCurrentMode() || 'swing';
     
     let finalAction = consensus.action;
@@ -240,7 +272,7 @@ export class ManagerAgent extends BaseAgent {
     }
     
     if (finalAction === 'buy' || finalAction === 'sell') {
-      const sizingAgent = this.agents.get('position_sizing_agent') as any;
+      const sizingAgent = this.getSubAgent('position_sizing_agent');
       const sizingDecision = decisions.find(d => d.agentId === 'position_sizing_agent');
       
       if (sizingDecision && sizingDecision.parameters) {
@@ -290,7 +322,7 @@ export class ManagerAgent extends BaseAgent {
   }
 
   private applyOptimizations(): void {
-    const tradeMaster = this.agents.get('trade_master_agent') as any;
+    const tradeMaster = this.getSubAgent('trade_master_agent');
     if (tradeMaster) {
       const optimizations = tradeMaster.getPendingOptimizations();
       for (const opt of optimizations) {
@@ -326,8 +358,10 @@ export class ManagerAgent extends BaseAgent {
     return this.haltReason;
   }
 
+  getSubAgent<K extends keyof AgentTypeMap>(agentId: K): AgentTypeMap[K] | undefined;
+  getSubAgent(agentId: string): BaseAgent | undefined;
   getSubAgent(agentId: string): BaseAgent | undefined {
-    return this.agents.get(agentId);
+    return this.agents.get(agentId) as BaseAgent | undefined;
   }
 
   getAllSubAgents(): BaseAgent[] {
@@ -373,7 +407,7 @@ export class ManagerAgent extends BaseAgent {
     currentMode: string;
     lastConsensus: any;
   } {
-    const styleAgent = this.agents.get('style_managing_agent') as any;
+    const styleAgent = this.getSubAgent('style_managing_agent');
     return {
       isHalted: this.isTradingHalted,
       haltReason: this.haltReason,

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Trading artifacts
+agent_system/backtest/results/*_results.json
+agent_system/backtest/results/backtrader_xauusd_results.json
+agent_system/data/trades/
+agent_system/reports/
+temp_reports/
+
+# Runtime state
+*.log
+*.pid
+*.db
+*.db-shm
+*.db-wal
+data/calendar_cache.json
+.freebuff/
+
+# SDD workspace (agent scratch, not source)
+.superpowers/
+
+# OS
+.DS_Store
+
+# Secrets / local credentials (NEVER commit)
+.env
+.env.*
+!.env.example
+agent_system/config/settings.yaml
+
+# Cloned reference repos (not part of this project)
+deepseek-harness/
+backtrader-pullback-window-xauusd/
+kimi-code/
+kimi-code-server/
+AIGENEV7---ALL-MODELS-UNLOCKED/
+all-you-need-to-know-about-ai-agents/
+agentic-ai-trading-be/

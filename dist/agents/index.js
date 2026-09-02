@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ManagerAgent = exports.TradeMasterAgent = exports.RiskCheckingAgent = exports.StyleManagingAgent = exports.PositionSizingAgent = exports.MultiTimeframeConfluenceAgent = exports.BiasDeterminingAgent = exports.LeverageAdjustmentAgent = exports.BaseAgent = void 0;
+exports.ManagerAgent = exports.TimeframeRecommendationAgent = exports.TradeMasterAgent = exports.RiskCheckingAgent = exports.StyleManagingAgent = exports.PositionSizingAgent = exports.MultiTimeframeConfluenceAgent = exports.BiasDeterminingAgent = exports.LeverageAdjustmentAgent = exports.BaseAgent = void 0;
 var BaseAgent_1 = require("../core/BaseAgent");
 Object.defineProperty(exports, "BaseAgent", { enumerable: true, get: function () { return BaseAgent_1.BaseAgent; } });
 var LeverageAdjustmentAgent_1 = require("./LeverageAdjustmentAgent");
@@ -17,6 +17,8 @@ var RiskCheckingAgent_1 = require("./RiskCheckingAgent");
 Object.defineProperty(exports, "RiskCheckingAgent", { enumerable: true, get: function () { return RiskCheckingAgent_1.RiskCheckingAgent; } });
 var TradeMasterAgent_1 = require("./TradeMasterAgent");
 Object.defineProperty(exports, "TradeMasterAgent", { enumerable: true, get: function () { return TradeMasterAgent_1.TradeMasterAgent; } });
+var TimeframeRecommendationAgent_1 = require("./TimeframeRecommendationAgent");
+Object.defineProperty(exports, "TimeframeRecommendationAgent", { enumerable: true, get: function () { return TimeframeRecommendationAgent_1.TimeframeRecommendationAgent; } });
 var ManagerAgent_1 = require("./ManagerAgent");
 Object.defineProperty(exports, "ManagerAgent", { enumerable: true, get: function () { return ManagerAgent_1.ManagerAgent; } });
 //# sourceMappingURL=index.js.map

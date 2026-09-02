@@ -22,8 +22,8 @@ class AgentInfo:
 class AgentRegistry:
     """Central registry for all agents in the trading system."""
     
-    def __init__(self, event_bus: EventBus = None):
-        self.event_bus = event_bus or event_bus
+    def __init__(self, bus: EventBus = None):
+        self.event_bus = bus or event_bus
         self._agents: Dict[str, AgentInfo] = {}
         self._startup_order: List[str] = []
         self._shutdown_order: List[str] = []
