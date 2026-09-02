@@ -297,17 +297,17 @@ function PayoffGraph({ strategy, spot }) {
 }
 
 /* ============================ OPTION STRATEGY CARD ============================ */
-function OptionStrategyCard({ strategy, spot, running, onToggle, onExplain, onSelect }) {
+function OptionStrategyCard({ strategy, spot, onExplain, onSelect }) {
   return React.createElement(Card, { style: { marginBottom: 10, cursor: 'pointer' }, pad: 12, onClick: () => onSelect && onSelect(strategy) },
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
         React.createElement('span', { style: { fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: (strategy.color || COLORS.blue) + '22', color: strategy.color || COLORS.blue } }, strategy.tag),
         React.createElement('span', { style: { fontSize: 13, fontWeight: 700, color: COLORS.text } }, strategy.name)
       ),
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-        React.createElement('button', { onClick: (e) => { e.stopPropagation(); onExplain(strategy); }, style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Explain'),
-        React.createElement('button', { onClick: (e) => { e.stopPropagation(); onToggle(strategy); }, style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: running ? COLORS.green : 'transparent', border: `1px solid ${running ? COLORS.green : COLORS.border}`, color: running ? '#06281a' : COLORS.textSecondary, cursor: 'pointer', fontWeight: 600 } }, running ? 'ON' : 'OFF')
-      )
+React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+          React.createElement('button', { onClick: (e) => { e.stopPropagation(); onExplain(strategy); }, style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Explain'),
+          React.createElement('button', { disabled: true, title: 'Strategy execution not yet implemented', style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textTertiary, cursor: 'not-allowed', fontWeight: 600, opacity: 0.6 } }, 'NOT IMPLEMENTED')
+        )
     ),
     React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginTop: 6, lineHeight: 1.4 } }, strategy.desc.slice(0, 90) + '…'),
     React.createElement('div', { style: { marginTop: 8 } }, React.createElement(PayoffGraph, { strategy, spot }))
@@ -315,15 +315,15 @@ function OptionStrategyCard({ strategy, spot, running, onToggle, onExplain, onSe
 }
 
 /* ============================ TRADING STRATEGY CARD ============================ */
-function TradingStrategyCard({ strategy, running, onToggle, onExplain, onBacktest }) {
+function TradingStrategyCard({ strategy, onExplain, onBacktest }) {
   return React.createElement(Card, { style: { marginBottom: 10 }, pad: 14 },
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
       React.createElement('span', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text } }, strategy.name),
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-        React.createElement('button', { onClick: () => onExplain(strategy), style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Explain'),
-        React.createElement('button', { onClick: () => onBacktest(strategy), style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Backtest'),
-        React.createElement('button', { onClick: () => onToggle(strategy), style: { fontSize: 11, padding: '4px 10px', borderRadius: 6, background: running ? COLORS.green : 'transparent', border: `1px solid ${running ? COLORS.green : COLORS.border}`, color: running ? '#06281a' : COLORS.textSecondary, cursor: 'pointer', fontWeight: 700 } }, running ? 'RUNNING' : 'START')
-      )
+React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+          React.createElement('button', { onClick: () => onExplain(strategy), style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Explain'),
+          React.createElement('button', { onClick: () => onBacktest(strategy), style: { fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: 'pointer' } }, 'Backtest'),
+          React.createElement('button', { disabled: true, title: 'Strategy execution not yet implemented', style: { fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textTertiary, cursor: 'not-allowed', fontWeight: 700, opacity: 0.6 } }, 'NOT IMPLEMENTED')
+        )
     ),
     React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginTop: 6, lineHeight: 1.45 } }, strategy.desc)
   );
@@ -387,7 +387,6 @@ function OptionsView() {
   const [underlying, setUnderlying] = useState('BTC');
   const [options, setOptions] = useState([]);
   const [spot, setSpot] = useState(0);
-  const [running, setRunning] = useState({});
   const [explain, setExplain] = useState(null);
   const [positions, setPositions] = useState(null);
   const [selStrategy, setSelStrategy] = useState(OPTION_STRATEGIES[0]);
@@ -395,7 +394,6 @@ function OptionsView() {
     fetch(`${API}/delta/options?underlying=${underlying}`).then(r => r.json()).then(d => { setOptions(d.options || []); if ((d.options || []).length) setSpot(d.options[0].spot); });
     fetch(`${API}/delta/positions`).then(r => r.json()).then(d => setPositions(d.positions || []));
   }, [underlying]);
-  const toggle = (s) => setRunning(Object.assign({}, running, { [s.id]: !running[s.id] }));
   return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: 18, alignItems: 'start' } },
     React.createElement('div', null,
       React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 14, alignItems: 'center' } },
@@ -404,7 +402,7 @@ function OptionsView() {
       ),
       React.createElement(Section, { title: `Option Strategies — ${underlying} (${options.length} contracts)` },
         React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 } },
-          OPTION_STRATEGIES.map(s => React.createElement(OptionStrategyCard, { key: s.id, strategy: s, spot, running: !!running[s.id], onToggle: toggle, onExplain: setExplain, onSelect: setSelStrategy }))
+          OPTION_STRATEGIES.map(s => React.createElement(OptionStrategyCard, { key: s.id, strategy: s, spot, onExplain: setExplain, onSelect: setSelStrategy }))
         )
       )
     ),
@@ -434,11 +432,9 @@ function OptionsView() {
 /* ============================ STRATEGIES VIEW ============================ */
 function StrategiesView() {
   const [asset, setAsset] = useState('BTC');
-  const [running, setRunning] = useState({});
   const [explain, setExplain] = useState(null);
   const [backtest, setBacktest] = useState(null);
   const list = TRADING_STRATEGIES[asset] || [];
-  const toggle = (s) => setRunning(Object.assign({}, running, { [s.id]: !running[s.id] }));
   return React.createElement('div', null,
     React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' } },
       ASSET_TABS.map(a => React.createElement(Tab, { key: a, active: asset === a, onClick: () => setAsset(a) }, a + (a === 'MEME' ? ' Coins' : ' Strategies')))
@@ -446,7 +442,7 @@ function StrategiesView() {
     backtest
       ? React.createElement(BacktestPanel, { strategy: backtest, onClose: () => setBacktest(null) })
       : React.createElement(Section, { title: `${asset} Trading Strategies` },
-        list.map(s => React.createElement(TradingStrategyCard, { key: s.id, strategy: s, running: !!running[s.id], onToggle: toggle, onExplain: setExplain, onBacktest: setBacktest }))
+        list.map(s => React.createElement(TradingStrategyCard, { key: s.id, strategy: s, onExplain: setExplain, onBacktest: setBacktest }))
       ),
     explain && React.createElement(Modal, { title: explain.name, onClose: () => setExplain(null) },
       React.createElement('div', { style: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.6 } }, explain.desc)
@@ -487,13 +483,13 @@ function AnalyticsView() {
     React.createElement(Section, { title: 'Feature Engineering Console', right: React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center' } },
         ASSETS.map(a => React.createElement(Tab, { key: a, small: true, active: asset === a, onClick: () => setAsset(a) }, a)),
         React.createElement('span', { style: { color: COLORS.border, fontFamily: E.fontMono || 'inherit' } }, '·'),
-        TFS.map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t))
+        sub !== 'micro' && TFS.map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t))
       ) },
       React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
         subTabs.map(s => React.createElement(Tab, { key: s.id, small: true, active: sub === s.id, onClick: () => setSub(s.id) }, s.label))
       ),
       sub === 'features' && React.createElement(FeaturesView, { asset, tf }),
-      sub === 'micro' && React.createElement(MicroFeaturesView, { asset, tf }),
+      sub === 'micro' && React.createElement(MicroFeaturesView, { asset }),
       sub === 'regime' && React.createElement(RegimeView, { asset, tf }),
       sub === 'alpha' && React.createElement(AlphaZooView, { asset, tf }),
       sub === 'leakage' && React.createElement(LeakageView, { asset, tf }),
