@@ -1,5 +1,7 @@
 window.Chrome = window.Chrome || {};
 
+var _bootActive = false; /* near top of file after window.Chrome = window.Chrome || {}; */
+
 // Part A — BootSequence
 
 window.Chrome.createBootOverlay = function () {
@@ -25,19 +27,29 @@ window.Chrome.createBootOverlay = function () {
 };
 
 window.Chrome.runBoot = function (onDone) {
+  if (_bootActive) return;
+  _bootActive = true;
   var overlay = window.Chrome.createBootOverlay();
   document.body.appendChild(overlay);
   var log = overlay.querySelector('#boot-log');
   var children = log.children;
-  var li = 0, ci = 0;
+  var li = 0, ci = 0, tids = [];
   function typeLine(i, cb) {
     var node = children[i]; var full = node.dataset.full;
-    function step() { ci++; node.textContent = full.slice(0, ci); if (ci < full.length) { setTimeout(step, 8); } else { node.textContent = full + '_'; cb(); } }
-    setTimeout(step, 180);
+    function step() { ci++; node.textContent = full.slice(0, ci); if (ci < full.length) { tids.push(setTimeout(step, 8)); } else { node.textContent = full + '_'; cb(); } }
+    tids.push(setTimeout(step, 180));
   }
   function next() {
     if (li >= children.length) {
-      setTimeout(function () { overlay.style.transition = 'opacity 500ms'; overlay.style.opacity = '0'; setTimeout(function () { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); if (onDone) onDone(); }, 520); }, 400);
+      tids.push(setTimeout(function () {
+        overlay.style.transition = 'opacity 500ms'; overlay.style.opacity = '0';
+        tids.push(setTimeout(function () {
+          tids.forEach(clearTimeout); tids = [];
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          _bootActive = false;
+          if (onDone) onDone();
+        }, 520));
+      }, 400));
       return;
     }
     ci = 0; typeLine(li, function () { li++; next(); });
