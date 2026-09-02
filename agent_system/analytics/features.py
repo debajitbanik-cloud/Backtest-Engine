@@ -39,6 +39,39 @@ class NormalizationType(str, Enum):
     PCT_CHANGE = "pct_change"
 
 
+def _normalize_series(
+    s: pd.Series,
+    norm: NormalizationType,
+    params: Optional[Dict[str, Any]] = None,
+) -> pd.Series:
+    """Apply a registered normalization transform to a feature series.
+
+    Returns a copy so the raw feature value is never mutated in place. NaN values
+    are preserved throughout. For ZSCORE/ROBUST/MINMAX the statistics are computed
+    over the full series (production uses a fit-transform split; here we expose the
+    transform for feature exploration).
+    """
+    params = params or {}
+    out = s
+    if norm == NormalizationType.ZSCORE:
+        mu = float(params.get("mean", np.nanmean(s)))
+        sd = float(params.get("std", np.nanstd(s)))
+        out = (s - mu) / sd if sd and sd > 0 else s * np.nan
+    elif norm == NormalizationType.MINMAX:
+        lo = float(params.get("min", np.nanmin(s)))
+        hi = float(params.get("max", np.nanmax(s)))
+        out = (s - lo) / (hi - lo) if hi and hi > lo else s * np.nan
+    elif norm == NormalizationType.ROBUST:
+        med = float(params.get("median", np.nanmedian(s)))
+        iqr = float(params.get("iqr", np.nanpercentile(s, 75) - np.nanpercentile(s, 25)))
+        out = (s - med) / iqr if iqr and iqr > 0 else s * np.nan
+    elif norm == NormalizationType.LOG:
+        out = np.log(np.where(s > 0, s, np.nan))
+    elif norm == NormalizationType.PCT_CHANGE:
+        out = s.pct_change()
+    return pd.Series(out, index=s.index, name=s.name)
+
+
 @dataclass
 class FeatureMetadata:
     """Complete metadata for a feature."""
@@ -269,6 +302,101 @@ class FeatureFactory:
         self.register("realized_vol_20", lambda df: df["close"].pct_change().rolling(20).std() * np.sqrt(252),
                      FeatureCategory.VOLATILITY, "Annualized realized vol(20)", ["close"], 21)
 
+        # ── Extended momentum / trend features ──────────────────────────────
+        self.register("ema9", lambda df: df["close"].ewm(span=9, adjust=False).mean(), FeatureCategory.PRICE,
+                     "EMA(9)", ["close"], 10)
+        self.register("ema21", lambda df: df["close"].ewm(span=21, adjust=False).mean(), FeatureCategory.PRICE,
+                     "EMA(21)", ["close"], 22)
+        self.register("ema50", lambda df: df["close"].ewm(span=50, adjust=False).mean(), FeatureCategory.PRICE,
+                     "EMA(50)", ["close"], 51)
+        self.register("sma20", lambda df: df["close"].rolling(20).mean(), FeatureCategory.PRICE,
+                     "SMA(20)", ["close"], 21)
+        self.register("sma50", lambda df: df["close"].rolling(50).mean(), FeatureCategory.PRICE,
+                     "SMA(50)", ["close"], 51)
+        self.register("sma200", lambda df: df["close"].rolling(200).mean(), FeatureCategory.PRICE,
+                     "SMA(200)", ["close"], 201)
+        self.register("price_dist_sma50", lambda df: (df["close"] / df["close"].rolling(50).mean() - 1) * 100,
+                     FeatureCategory.MOMENTUM, "Price distance from SMA(50) %", ["close"], 51)
+        self.register("price_dist_sma200", lambda df: (df["close"] / df["close"].rolling(200).mean() - 1) * 100,
+                     FeatureCategory.MOMENTUM, "Price distance from SMA(200) %", ["close"], 201)
+        self.register("ema_fast_slow", lambda df: df["close"].ewm(span=12, adjust=False).mean() - df["close"].ewm(span=26, adjust=False).mean(),
+                     FeatureCategory.MOMENTUM, "EMA(12)-EMA(26) distance", ["close"], 27)
+        self.register("macd_histogram", self._macd_hist(), FeatureCategory.MOMENTUM,
+                     "MACD histogram", ["close"], 35)
+        self.register("macd_signal", lambda df: df["close"].ewm(span=12, adjust=False).mean().sub(
+            df["close"].ewm(span=26, adjust=False).mean()).ewm(span=9, adjust=False).mean(),
+            FeatureCategory.MOMENTUM, "MACD signal line", ["close"], 35)
+        self.register("roc_10", lambda df: df["close"].pct_change(10) * 100, FeatureCategory.MOMENTUM,
+                     "ROC(10) %", ["close"], 11)
+        self.register("momentum_10", lambda df: df["close"] - df["close"].shift(10), FeatureCategory.MOMENTUM,
+                     "Momentum(10)", ["close"], 11)
+        self.register("adx_14", self._adx(14), FeatureCategory.MOMENTUM,
+                     "ADX(14) trend strength", ["high", "low", "close"], 15)
+        self.register("cci_20", lambda df: (df["close"] - df["close"].rolling(20).mean()) / (0.015 * (df["close"] - df["close"].rolling(20).mean()).abs().rolling(20).mean().replace(0, np.nan)),
+                     FeatureCategory.MOMENTUM, "CCI(20)", ["close"], 21)
+        self.register("willr_14", lambda df: -100 * (df["high"].rolling(14).max() - df["close"]) / (df["high"].rolling(14).max() - df["low"].rolling(14).min()).replace(0, np.nan),
+                     FeatureCategory.MOMENTUM, "Williams %R(14)", ["high", "low", "close"], 15)
+        self.register("stoch_rsi", self._stoch_rsi(14), FeatureCategory.MOMENTUM,
+                     "Stochastic RSI(14)", ["close"], 17)
+        self.register("aroon_up", lambda df: 100 * ((df["high"].rolling(25).apply(np.argmax) + 1) / 25),
+                     FeatureCategory.MOMENTUM, "Aroon Up(25)", ["high"], 26)
+        self.register("aroon_down", lambda df: 100 * ((df["low"].rolling(25).apply(np.argmin) + 1) / 25),
+                     FeatureCategory.MOMENTUM, "Aroon Down(25)", ["low"], 26)
+
+        # ── Extended volatility features ────────────────────────────────────
+        self.register("keltner_upper", lambda df: df["close"].ewm(span=20, adjust=False).mean() + 2 * self._atr(20)(df),
+                     FeatureCategory.VOLATILITY, "Keltner upper band", ["high", "low", "close"], 21)
+        self.register("keltner_lower", lambda df: df["close"].ewm(span=20, adjust=False).mean() - 2 * self._atr(20)(df),
+                     FeatureCategory.VOLATILITY, "Keltner lower band", ["high", "low", "close"], 21)
+        self.register("hurst_exponent", self._hurst(64), FeatureCategory.VOLATILITY,
+                     "Hurst exponent(64) trend persistence", ["close"], 65)
+        self.register("rolling_skew_20", lambda df: df["close"].rolling(20).skew(), FeatureCategory.VOLATILITY,
+                     "Rolling skew(20)", ["close"], 21)
+        self.register("rolling_kurt_20", lambda df: df["close"].rolling(20).kurt(), FeatureCategory.VOLATILITY,
+                     "Rolling kurtosis(20)", ["close"], 21)
+        self.register("zscore20", lambda df: (df["close"] - df["close"].rolling(20).mean()) / df["close"].rolling(20).std().replace(0, np.nan),
+                     FeatureCategory.VOLATILITY, "Price z-score(20)", ["close"], 21)
+
+        # ── Extended volume features ────────────────────────────────────────
+        self.register("obv", lambda df: (np.sign(df["close"].diff()).fillna(0) * df["volume"]).cumsum() if "volume" in df.columns else 0,
+                     FeatureCategory.VOLUME, "On-balance volume", ["close", "volume"], 2)
+        self.register("obv_slope", lambda df: (np.sign(df["close"].diff()).fillna(0) * df["volume"]).cumsum().rolling(14).mean() if "volume" in df.columns else 0,
+                     FeatureCategory.VOLUME, "OBV slope(14)", ["close", "volume"], 15)
+        self.register("mfi_14", self._mfi(14), FeatureCategory.VOLUME,
+                     "Money Flow Index(14)", ["high", "low", "close", "volume"], 15)
+        self.register("cmf_20", lambda df: ((df["close"] - df["low"]) - (df["high"] - df["close"])) / (df["high"] - df["low"]).replace(0, np.nan) * df["volume"] if "volume" in df.columns else 0,
+                     FeatureCategory.VOLUME, "Chaikin Money Flow(20)", ["high", "low", "close", "volume"], 21)
+        self.register("volume_zscore_20", lambda df: (df["volume"] - df["volume"].rolling(20).mean()) / df["volume"].rolling(20).std().replace(0, np.nan) if "volume" in df.columns else 0,
+                     FeatureCategory.VOLUME, "Volume z-score(20)", ["volume"], 21)
+        self.register("dollar_volume", lambda df: df["close"] * df["volume"] if "volume" in df.columns else df["close"],
+                     FeatureCategory.VOLUME, "Dollar volume", ["close", "volume"], 1)
+
+        # ── Extended microstructure features ────────────────────────────────
+        self.register("close_position", lambda df: (df["close"] - df["low"].rolling(20).min()) / (df["high"].rolling(20).max() - df["low"].rolling(20).min()).replace(0, np.nan),
+                     FeatureCategory.MICROSTRUCTURE, "Close position within 20-bar range (CSS %B)", ["high", "low", "close"], 21)
+        self.register("intrabar_range", lambda df: (df["high"] - df["low"]) / df["close"], FeatureCategory.MICROSTRUCTURE,
+                     "Intrabar range / close", ["high", "low", "close"], 1)
+        self.register("gap", lambda df: df["open"] / df["close"].shift(1) - 1, FeatureCategory.MICROSTRUCTURE,
+                     "Open-to-prev-close gap", ["open", "close"], 2)
+        self.register("autocorr_5", lambda df: df["close"].pct_change().rolling(10).apply(lambda x: x.autocorr() if len(x) > 5 and x.var() > 0 else 0, raw=False),
+                     FeatureCategory.MICROSTRUCTURE, "Return autocorrelation(10)", ["close"], 11)
+
+        # ── Cross-asset placeholder fixes ───────────────────────────────────
+        self.register("btc_dominance", lambda df: 0.0, FeatureCategory.CROSS_ASSET,
+                     "BTC dominance placeholder (filled by microfeatures engine)", [], 1)
+        self.register("eth_btc_ratio", lambda df: 0.0, FeatureCategory.CROSS_ASSET,
+                     "ETH/BTC ratio placeholder (filled by microfeatures engine)", [], 1)
+        self.register("sector_momentum", lambda df: 0.0, FeatureCategory.CROSS_ASSET,
+                     "Sector momentum placeholder (filled by microfeatures engine)", [], 1)
+
+        # ── Derivative / live features (filled by microfeatures engine) ─────
+        self.register("funding_rate", lambda df: 0.0, FeatureCategory.DERIVATIVES,
+                     "Funding rate placeholder (filled by microfeatures engine)", [], 1)
+        self.register("open_interest", lambda df: 0.0, FeatureCategory.DERIVATIVES,
+                     "Open interest placeholder (filled by microfeatures engine)", [], 1)
+        self.register("mark_basis", lambda df: 0.0, FeatureCategory.DERIVATIVES,
+                     "Mark-to-spot basis placeholder (filled by microfeatures engine)", [], 1)
+
         # Volume
         self.register("volume", lambda df: df["volume"] if "volume" in df.columns else 1, FeatureCategory.VOLUME,
                      "Volume", ["volume"], 1)
@@ -320,13 +448,23 @@ class FeatureFactory:
         )
         self.registry.register(metadata)
 
-    def compute(self, df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
-        """Compute requested features for a DataFrame."""
+    def compute(self, df: pd.DataFrame, features: List[str], apply_normalization: bool = True) -> pd.DataFrame:
+        """Compute requested features for a DataFrame.
+
+        When `apply_normalization` is True (default), each computed feature is
+        normalized according to its registered `NormalizationType`. This closes
+        the gap where normalization was stored in metadata but never applied.
+        """
         result = df.copy()
         for name in features:
             if name in self._feature_fns:
                 try:
-                    result[name] = self._feature_fns[name](df)
+                    col = self._feature_fns[name](df)
+                    if apply_normalization:
+                        meta = self.registry.get(name)
+                        if meta is not None and meta.normalization != NormalizationType.NONE:
+                            col = _normalize_series(col, meta.normalization, meta.normalization_params)
+                    result[name] = col
                 except Exception as e:
                     print(f"Feature {name} computation failed: {e}")
                     result[name] = np.nan
@@ -401,6 +539,79 @@ class FeatureFactory:
             upper = sma + 2 * std
             lower = sma - 2 * std
             return (df["close"] - lower) / (upper - lower).replace(0, np.nan)
+        return _calc
+
+    def _macd_hist(self) -> Callable[[pd.DataFrame], pd.Series]:
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            ema12 = df["close"].ewm(span=12, adjust=False).mean()
+            ema26 = df["close"].ewm(span=26, adjust=False).mean()
+            macd = ema12 - ema26
+            signal = macd.ewm(span=9, adjust=False).mean()
+            return macd - signal
+        return _calc
+
+    def _adx(self, period: int) -> Callable[[pd.DataFrame], pd.Series]:
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            up = df["high"].diff()
+            down = -df["low"].diff()
+            plus_dm = np.where((up > down) & (up > 0), up, 0.0)
+            minus_dm = np.where((down > up) & (down > 0), down, 0.0)
+            tr = pd.concat([
+                df["high"] - df["low"],
+                (df["high"] - df["close"].shift()).abs(),
+                (df["low"] - df["close"].shift()).abs(),
+            ], axis=1).max(axis=1)
+            atr = tr.rolling(period).mean().replace(0, np.nan)
+            plus_di = 100 * pd.Series(plus_dm, index=df.index).rolling(period).mean() / atr
+            minus_di = 100 * pd.Series(minus_dm, index=df.index).rolling(period).mean() / atr
+            dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
+            return dx.rolling(period).mean()
+        return _calc
+
+    def _stoch_rsi(self, period: int) -> Callable[[pd.DataFrame], pd.Series]:
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            delta = df["close"].diff()
+            gain = delta.clip(lower=0).rolling(period).mean()
+            loss = (-delta.clip(upper=0)).rolling(period).mean()
+            rs = gain / loss.replace(0, np.nan)
+            rsi = 100 - (100 / (1 + rs))
+            lo = rsi.rolling(period).min()
+            hi = rsi.rolling(period).max()
+            return (rsi - lo) / (hi - lo).replace(0, np.nan)
+        return _calc
+
+    def _hurst(self, max_lag: int) -> Callable[[pd.DataFrame], pd.Series]:
+        import warnings
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            closes = df["close"].to_numpy()
+            out = np.full(len(closes), np.nan)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                for i in range(max_lag * 3, len(closes)):
+                    window = closes[i - max_lag * 3 : i]
+                    if len(window) < max_lag * 3:
+                        continue
+                    lags = range(2, max_lag)
+                    ts = np.log(window)
+                    tau = [np.std(np.subtract(ts[lag:], ts[:-lag])) for lag in lags]
+                    tau = np.array(tau)
+                    mask = tau > 0
+                    if mask.sum() < 2:
+                        continue
+                    poly = np.polyfit(np.log(list(lags))[mask.tolist()], np.log(tau[mask]), 1)
+                    out[i] = poly[0]
+            return pd.Series(out, index=df.index)
+        return _calc
+
+    def _mfi(self, period: int) -> Callable[[pd.DataFrame], pd.Series]:
+        def _calc(df: pd.DataFrame) -> pd.Series:
+            if "volume" not in df.columns:
+                return pd.Series(np.nan, index=df.index)
+            tp = (df["high"] + df["low"] + df["close"]) / 3
+            mf = tp * df["volume"]
+            pos = mf.where(tp > tp.shift(1), 0.0).rolling(period).sum()
+            neg = mf.where(tp < tp.shift(1), 0.0).rolling(period).sum()
+            return 100 - (100 / (1 + pos / neg.replace(0, np.nan)))
         return _calc
 
 

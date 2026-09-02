@@ -468,16 +468,301 @@ function Modal({ title, onClose, children }) {
 
 /* ============================ ANALYTICS VIEW ============================ */
 function AnalyticsView() {
+  const E = window.Theme && window.Theme.EXTRA || {};
+  const [asset, setAsset] = useState('BTC');
+  const [tf, setTf] = useState('1h');
+  const [sub, setSub] = useState('features');
+  const ASSETS = ['BTC', 'ETH', 'XAU', 'SOL', 'XRP', 'DOGE'];
+  const TFS = ['15m', '1h', '4h', '1d'];
+  const subTabs = [
+    { id: 'features', label: 'Features' },
+    { id: 'micro', label: 'Micro-Features' },
+    { id: 'regime', label: 'Regime' },
+    { id: 'alpha', label: 'Alpha Zoo' },
+    { id: 'leakage', label: 'Leakage' },
+    { id: 'registry', label: 'Registry' },
+  ];
   return React.createElement('div', null,
-    React.createElement(Section, { title: 'Market Heatmap — Crypto Bubbles' },
-      React.createElement('iframe', {
-        src: 'https://cryptobubbles.net/', title: 'Crypto Bubbles',
-        style: { width: '100%', height: '80vh', border: `1px solid ${COLORS.border}`, borderRadius: 12, background: '#000' },
-        sandbox: 'allow-scripts allow-same-origin allow-forms'
-      })
+    React.createElement(Section, { title: 'Feature Engineering Console', right: React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center' } },
+        ASSETS.map(a => React.createElement(Tab, { key: a, small: true, active: asset === a, onClick: () => setAsset(a) }, a)),
+        React.createElement('span', { style: { color: COLORS.border, fontFamily: E.fontMono || 'inherit' } }, '·'),
+        TFS.map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t))
+      ) },
+      React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
+        subTabs.map(s => React.createElement(Tab, { key: s.id, small: true, active: sub === s.id, onClick: () => setSub(s.id) }, s.label))
+      ),
+      sub === 'features' && React.createElement(FeaturesView, { asset, tf }),
+      sub === 'micro' && React.createElement(MicroFeaturesView, { asset, tf }),
+      sub === 'regime' && React.createElement(RegimeView, { asset, tf }),
+      sub === 'alpha' && React.createElement(AlphaZooView, { asset, tf }),
+      sub === 'leakage' && React.createElement(LeakageView, { asset, tf }),
+      sub === 'registry' && React.createElement(RegistryView, null)
     )
   );
 }
+
+function AnalyticsHeader({ data }) {
+  return React.createElement('div', { style: { display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12, fontSize: 12, color: COLORS.textSecondary, fontFamily: 'JetBrains Mono, monospace' } },
+    data && data.asset && React.createElement('span', null, 'ASSET ' + data.asset),
+    data && data.timeframe && React.createElement('span', null, 'TF ' + data.timeframe),
+    data && data.bars != null && React.createElement('span', null, 'BARS ' + data.bars),
+    data && data.count != null && React.createElement('span', null, 'COUNT ' + data.count)
+  );
+}
+
+function FeaturesView({ asset, tf }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [catFilter, setCatFilter] = useState('ALL');
+  const load = () => {
+    fetch(`${API}/analytics/features?asset=${asset}&timeframe=${tf}&limit=300`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) { setData(d); setErr(null); } })
+      .catch(() => setErr('failed to load features'));
+  };
+  useEffect(() => { setData(null); load(); }, [asset, tf]);
+  const cats = data ? (data.categories || []) : [];
+  const feats = data ? (data.features || []).filter(f => catFilter === 'ALL' || f.category === catFilter) : [];
+  return React.createElement('div', null,
+    React.createElement(AnalyticsHeader, { data }),
+    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' } },
+      React.createElement(Tab, { small: true, active: catFilter === 'ALL', onClick: () => setCatFilter('ALL') }, 'ALL'),
+      cats.map(c => React.createElement(Tab, { key: c, small: true, active: catFilter === c, onClick: () => setCatFilter(c) }, c))
+    ),
+    err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
+    React.createElement(Card, { pad: 12 },
+      React.createElement('div', { style: { maxHeight: 520, overflowY: 'auto' } },
+        React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 12 } },
+          React.createElement('thead', null, React.createElement('tr', null,
+            ['Feature', 'Category', 'Value', 'Lookback', 'Norm'].map(h => React.createElement('th', { key: h, style: { textAlign: 'left', padding: '6px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: 0.4 } }, h))
+          )),
+          React.createElement('tbody', null,
+            feats.map(f => React.createElement('tr', { key: f.name },
+              React.createElement('td', { style: { padding: '5px 8px', fontFamily: 'JetBrains Mono, monospace', color: COLORS.text, fontWeight: 600, borderBottom: '1px solid ' + COLORS.border } }, f.name),
+              React.createElement('td', { style: { padding: '5px 8px', color: CAT_COLOR[f.category] || COLORS.blue, borderBottom: '1px solid ' + COLORS.border, fontSize: 11 } }, f.category),
+              React.createElement('td', { style: { padding: '5px 8px', fontFamily: 'JetBrains Mono, monospace', color: f.value == null ? COLORS.textTertiary : COLORS.textSecondary, borderBottom: '1px solid ' + COLORS.border, textAlign: 'right' } }, f.value == null ? '—' : (Math.abs(f.value) >= 1000 ? f.value.toExponential(2) : Number(f.value).toFixed(4))),
+              React.createElement('td', { style: { padding: '5px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border } }, f.lookback),
+              React.createElement('td', { style: { padding: '5px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontSize: 10 } }, f.normalization)
+            )),
+            feats.length === 0 && React.createElement('tr', null, React.createElement('td', { colSpan: 5, style: { padding: 12, color: COLORS.textTertiary, textAlign: 'center' } }, 'No features'))
+          )
+        )
+      )
+    )
+  );
+}
+
+function MicroFeaturesView({ asset }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const load = () => {
+    fetch(`${API}/analytics/microfeatures?underlying=${asset}&symbol=${asset}USD`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.error) { setData(d); setErr(null); } else setErr((d && d.error) || 'failed'); })
+      .catch(() => setErr('failed to load micro-features'));
+  };
+  useEffect(() => { setData(null); load(); }, [asset]);
+  const render = (fam) => {
+    const f = (data && data[fam] && data[fam].features) || null;
+    if (!f || !Object.keys(f).length) return null;
+    return React.createElement(Card, { pad: 12, style: { background: (window.Theme && window.Theme.EXTRA && window.Theme.EXTRA.glass) } },
+      React.createElement('div', { style: { fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: COLORS.text, letterSpacing: 0.5, marginBottom: 8 } }, String(fam).toUpperCase().replace('_', ' ')),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' } },
+        Object.keys(f).filter(k => typeof f[k] !== 'object').map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 } }, k),
+          React.createElement('span', { style: { color: COLORS.textSecondary, fontFamily: 'JetBrains Mono, monospace', textAlign: 'right' } }, (typeof f[k] === 'number' ? (Math.abs(f[k]) >= 1000 ? Number(f[k]).toFixed(0) : Number(f[k]).toFixed(4)) : String(f[k])))
+        ))
+      )
+    );
+  };
+  return React.createElement('div', null,
+    (err || data === null) && React.createElement('div', { style: { color: COLORS.red, fontSize: 12, marginBottom: 10 } }, err || 'loading…'),
+    data && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 } },
+      render('derivatives_symbol'),
+      render('cross_asset'),
+      render('options_iv'),
+      render('journal'),
+      render('event')
+    ),
+    data && data.cross_asset && data.cross_asset.sector_breakdown && React.createElement(Card, { pad: 12, style: { marginTop: 12 } },
+      React.createElement('div', { style: { fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: COLORS.text, letterSpacing: 0.5, marginBottom: 8 } }, 'SECTOR MOMENTUM (24H %)'),
+      React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+        Object.entries(data.cross_asset.sector_breakdown).map(([k, v]) => React.createElement('span', { key: k, style: { padding: '4px 10px', borderRadius: 6, fontSize: 12, fontFamily: 'JetBrains Mono, monospace', background: COLORS.bgElevated, border: '1px solid ' + COLORS.border, color: v >= 0 ? COLORS.green : COLORS.red } }, k + ' ' + (v >= 0 ? '+' : '') + v + '%'))
+      )
+    )
+  );
+}
+
+function RegimeView({ asset, tf }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    setD(null);
+    fetch(`${API}/analytics/regime?asset=${asset}&timeframe=${tf}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && !data.error) setD(data); else setErr((data && data.error) || 'failed'); })
+      .catch(() => setErr('failed'));
+  }, [asset, tf]);
+  const rows = d ? [
+    ['Trend', d.trend, d.trend_strength, d.trend === 'up' ? COLORS.green : d.trend === 'down' ? COLORS.red : COLORS.amber],
+    ['Volatility', d.volatility, d.vol_percentile, d.volatility === 'high' ? COLORS.red : COLORS.textSecondary],
+    ['Liquidity', d.liquidity, null, COLORS.textSecondary],
+    ['Momentum', Number(d.momentum).toFixed(2), null, Number(d.momentum) >= 0 ? COLORS.green : COLORS.red],
+    ['Session', d.session, null, COLORS.textSecondary],
+    ['Stress', d.stress, d.confidence, d.stress === 'elevated' ? COLORS.amber : COLORS.textSecondary],
+  ] : [];
+  return React.createElement('div', null,
+    React.createElement(AnalyticsHeader, { data: d }),
+    err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
+    d && React.createElement('div', null,
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 14 } },
+        React.createElement(Card, { pad: 18, style: { borderColor: d.trend === 'up' ? COLORS.green : d.trend === 'down' ? COLORS.red : COLORS.amber } },
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, 'DOMINANT REGIME'),
+          React.createElement('div', { style: { fontSize: 26, fontWeight: 800, color: d.trend === 'up' ? COLORS.green : d.trend === 'down' ? COLORS.red : COLORS.amber, fontFamily: (window.Theme && window.Theme.EXTRA && window.Theme.EXTRA.fontDisplay) } }, String(d.dominant || '-').toUpperCase()),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'confidence ' + Number(d.confidence || 0).toFixed(2))
+        ),
+        React.createElement(Card, { pad: 18 },
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, 'TREND STRENGTH'),
+          React.createElement('div', { style: { fontSize: 26, fontWeight: 800, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, Number(d.trend_strength || 0).toFixed(2)),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, '0 = weak · 1 = strong')
+        ),
+        React.createElement(Card, { pad: 18 },
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, 'VOL PERCENTILE'),
+          React.createElement('div', { style: { fontSize: 26, fontWeight: 800, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, Number(d.vol_percentile || 0).toFixed(2)),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, '0 = low vol · 1 = high vol')
+        )
+      ),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 } },
+        rows.map(r => React.createElement(Card, { key: r[0], pad: 12 },
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, r[0].toUpperCase()),
+          React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: r[3], marginTop: 3, fontFamily: 'JetBrains Mono, monospace' } }, String(r[1])),
+          r[2] != null && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, Number(r[2]).toFixed(3))
+        ))
+      )
+    )
+  );
+}
+
+function AlphaZooView({ asset, tf }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    setD(null);
+    fetch(`${API}/analytics/alpha-zoo?asset=${asset}&timeframe=${tf}&limit=300`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && !data.error) setD(data); else setErr((data && data.error) || 'failed'); })
+      .catch(() => setErr('failed'));
+  }, [asset, tf]);
+  const results = (d && d.results) || [];
+  return React.createElement('div', null,
+    React.createElement(AnalyticsHeader, { data: d }),
+    err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
+    React.createElement(Card, { pad: 12 },
+      React.createElement('div', { style: { maxHeight: 520, overflowY: 'auto' } },
+        React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 12 } },
+          React.createElement('thead', null, React.createElement('tr', null,
+            ['Factor', 'Status', 'IC mean', 'IR', 'Stability', 'Turnover'].map(h => React.createElement('th', { key: h, style: { textAlign: 'left', padding: '6px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontFamily: 'JetBrains Mono, monospace', fontSize: 10 } }, h))
+          )),
+          React.createElement('tbody', null,
+            results.map(r => React.createElement('tr', { key: r.name },
+              React.createElement('td', { style: { padding: '5px 8px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: COLORS.text, borderBottom: '1px solid ' + COLORS.border } }, r.name),
+              React.createElement('td', { style: { padding: '5px 8px', borderBottom: '1px solid ' + COLORS.border } },
+                React.createElement('span', { style: { padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: r.accepted ? COLORS.green + '22' : COLORS.bgElevated, color: r.accepted ? COLORS.green : COLORS.textTertiary, border: '1px solid ' + (r.accepted ? COLORS.green : COLORS.border) } }, r.accepted ? 'ACCEPTED' : 'REJECTED')
+              ),
+              React.createElement('td', { style: { padding: '5px 8px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', color: r.ic_mean >= 0 ? COLORS.green : COLORS.red, borderBottom: '1px solid ' + COLORS.border } }, Number(r.ic_mean).toFixed(4)),
+              React.createElement('td', { style: { padding: '5px 8px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', color: COLORS.textSecondary, borderBottom: '1px solid ' + COLORS.border } }, Number(r.ic_sharpe).toFixed(2)),
+              React.createElement('td', { style: { padding: '5px 8px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', color: COLORS.textSecondary, borderBottom: '1px solid ' + COLORS.border } }, Number(r.stability).toFixed(2)),
+              React.createElement('td', { style: { padding: '5px 8px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', color: COLORS.textSecondary, borderBottom: '1px solid ' + COLORS.border } }, Number(r.turnover).toFixed(2))
+            )),
+            results.length === 0 && React.createElement('tr', null, React.createElement('td', { colSpan: 6, style: { padding: 12, color: COLORS.textTertiary, textAlign: 'center' } }, 'No factors evaluated'))
+          )
+        )
+      ),
+      results.length > 0 && React.createElement('div', { style: { marginTop: 8, fontSize: 11, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } },
+        'Gates: IC ≥ 0.01 · IR ≥ 0.5 · turnover < 0.5 · stability > 0.3 · IC std < 0.5'
+      )
+    )
+  );
+}
+
+function LeakageView({ asset, tf }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    setD(null);
+    fetch(`${API}/analytics/leakage?asset=${asset}&timeframe=${tf}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && !data.error) setD(data); else setErr((data && data.error) || 'failed'); })
+      .catch(() => setErr('failed'));
+  }, [asset, tf]);
+  const details = (d && d.details) || [];
+  const sevColor = { critical: COLORS.red, warning: COLORS.amber, info: COLORS.blue };
+  return React.createElement('div', null,
+    React.createElement(AnalyticsHeader, { data: d }),
+    err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
+    d && React.createElement('div', { style: { display: 'flex', gap: 12, marginBottom: 12 } },
+      React.createElement(Card, { pad: 12 }, React.createElement('div', { style: { fontSize: 22, fontWeight: 800, color: COLORS.text } }, d.total_checks), React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Total checks')),
+      React.createElement(Card, { pad: 12, style: { borderColor: COLORS.green } }, React.createElement('div', { style: { fontSize: 22, fontWeight: 800, color: COLORS.green } }, d.passed), React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Passed')),
+      React.createElement(Card, { pad: 12, style: { borderColor: COLORS.red } }, React.createElement('div', { style: { fontSize: 22, fontWeight: 800, color: COLORS.red } }, d.failed), React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Failed'))
+    ),
+    React.createElement(Card, { pad: 12 },
+      React.createElement('div', { style: { maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 } },
+        details.map((c, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, padding: '8px 10px', borderRadius: 8, background: COLORS.bgElevated, border: '1px solid ' + COLORS.border } },
+          React.createElement('span', { style: { padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: (sevColor[c.severity] || COLORS.blue) + '22', color: sevColor[c.severity] || COLORS.blue } }, c.type),
+          React.createElement('span', { style: { fontWeight: 600, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, width: 150 } }, c.check),
+          React.createElement('span', { style: { flex: 1, color: COLORS.textTertiary, fontSize: 11 } }, c.message || ''),
+          React.createElement('span', { style: { fontWeight: 800, color: c.passed ? COLORS.green : COLORS.red } }, c.passed ? 'PASS' : 'FAIL')
+        )),
+        details.length === 0 && React.createElement('div', { style: { color: COLORS.textTertiary, textAlign: 'center' } }, 'No checks')
+      )
+    )
+  );
+}
+
+function RegistryView() {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [cat, setCat] = useState('ALL');
+  useEffect(() => { fetch(`${API}/analytics/registry`).then(r => r.ok ? r.json() : null).then(x => { if (x && !x.error) setD(x); else setErr((x && x.error) || 'failed'); }).catch(() => setErr('failed')); }, []);
+  const cats = d ? [...new Set(d.features.map(f => f.category))] : [];
+  const feats = d ? d.features.filter(f => cat === 'ALL' || f.category === cat) : [];
+  return React.createElement('div', null,
+    err && React.createElement('div', { style: { color: COLORS.red, fontSize: 12 } }, err),
+    d && React.createElement('div', null,
+      React.createElement(AnalyticsHeader, { data: { asset: 'REGISTRY', count: d.count } }),
+      React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' } },
+        React.createElement(Tab, { small: true, active: cat === 'ALL', onClick: () => setCat('ALL') }, 'ALL'),
+        cats.map(c => React.createElement(Tab, { key: c, small: true, active: cat === c, onClick: () => setCat(c) }, c))
+      ),
+      React.createElement(Card, { pad: 12 },
+        React.createElement('div', { style: { maxHeight: 520, overflowY: 'auto' } },
+          React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 12 } },
+            React.createElement('thead', null, React.createElement('tr', null,
+              ['Feature', 'Category', 'Lookback', 'Norm', 'Formula'].map(h => React.createElement('th', { key: h, style: { textAlign: 'left', padding: '6px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontFamily: 'JetBrains Mono, monospace', fontSize: 10 } }, h))
+            )),
+            React.createElement('tbody', null,
+              feats.map(f => React.createElement('tr', { key: f.name },
+                React.createElement('td', { style: { padding: '5px 8px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: COLORS.text, borderBottom: '1px solid ' + COLORS.border } }, f.name),
+                React.createElement('td', { style: { padding: '5px 8px', color: CAT_COLOR[f.category] || COLORS.blue, borderBottom: '1px solid ' + COLORS.border, fontSize: 11 } }, f.category),
+                React.createElement('td', { style: { padding: '5px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border } }, f.lookback),
+                React.createElement('td', { style: { padding: '5px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontSize: 10 } }, f.normalization),
+                React.createElement('td', { style: { padding: '5px 8px', color: COLORS.textTertiary, borderBottom: '1px solid ' + COLORS.border, fontSize: 10 } }, f.formula)
+              )),
+              feats.length === 0 && React.createElement('tr', null, React.createElement('td', { colSpan: 5, style: { padding: 12, color: COLORS.textTertiary, textAlign: 'center' } }, 'No features'))
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+const CAT_COLOR = {
+  price: '#4e8cff', momentum: '#2ecc71', volatility: '#f0a500', volume: '#00c8e8',
+  microstructure: '#9b59b6', derivatives: '#e74c3c', cross_asset: '#e91e63', time: '#8b8fa3',
+  regime: '#ff9800',
+};
+
 
 /* ============================ DASHBOARD VIEW ============================ */
 function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }) {

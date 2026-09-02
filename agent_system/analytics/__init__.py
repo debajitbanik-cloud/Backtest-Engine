@@ -11,6 +11,14 @@ from analytics.features import (
 )
 from analytics.leakage import LeakageSentinel, LeakageCheckResult
 from analytics.regime import RegimeDetector, RegimeType, RegimeState
+from analytics.microfeatures import (
+    derivative_features,
+    options_iv_features,
+    cross_asset_features,
+    journal_features,
+    event_features,
+    compute_all as compute_microfeatures,
+)
 
 __all__ = [
     "FeatureFactory",
@@ -22,4 +30,10 @@ __all__ = [
     "RegimeDetector",
     "RegimeType",
     "RegimeState",
+    "derivative_features",
+    "options_iv_features",
+    "cross_asset_features",
+    "journal_features",
+    "event_features",
+    "compute_microfeatures",
 ]

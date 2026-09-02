@@ -202,6 +202,13 @@ class PythonBridge:
         self.app.router.add_post('/agentm/run', self.agentm_run)
         self.app.router.add_get('/agentm/results', self.agentm_results)
         self.app.router.add_get('/market/banner', self.market_banner)
+        # ── Analytics / feature engineering endpoints ──────────────────────
+        self.app.router.add_get('/analytics/features', self.analytics_features)
+        self.app.router.add_get('/analytics/microfeatures', self.analytics_microfeatures)
+        self.app.router.add_get('/analytics/regime', self.analytics_regime)
+        self.app.router.add_get('/analytics/alpha-zoo', self.analytics_alpha_zoo)
+        self.app.router.add_get('/analytics/leakage', self.analytics_leakage)
+        self.app.router.add_get('/analytics/registry', self.analytics_registry)
     
     async def start(self) -> None:
         """Start the bridge server."""
@@ -2004,6 +2011,281 @@ class PythonBridge:
                 payload={'type': 'backtest_error', 'error': str(e)},
                 source_agent="AgentMBridge",
             ))
+
+    # ── Analytics / feature engineering endpoints ──────────────────────────
+
+    def _candles_to_df(self, candles: List[Dict]) -> "pd.DataFrame":
+        """Convert normalized OHLCV candle dicts to a pandas DataFrame with a datetime index."""
+        import pandas as _pd
+        if not candles:
+            return _pd.DataFrame()
+        df = _pd.DataFrame(candles)
+        idx = _pd.date_range(end=_pd.Timestamp.utcnow(), periods=len(df), freq="h")
+        df.index = idx
+        return df
+
+    async def analytics_features(self, request: web.Request) -> web.Response:
+        """Compute the full FeatureFactory feature set on live OHLCV data.
+
+        Query params: asset (BTC/ETH/XAU/...), timeframe, limit, categories (comma sep).
+        """
+        asset = (request.query.get('asset') or 'BTC').upper()
+        timeframe = request.query.get('timeframe') or '1h'
+        limit = int(request.query.get('limit', 300))
+        cats = request.query.get('categories')
+        if not _validate_symbol(f"{asset}USD") or not _validate_timeframe(timeframe):
+            return web.json_response({'error': 'Invalid asset or timeframe'}, status=400)
+        try:
+            candles = await self._fetch_ohlcv(asset, timeframe, limit)
+        except Exception as e:
+            return web.json_response({'error': 'Failed to fetch candles: ' + str(e)}, status=502)
+        if len(candles) < 30:
+            return web.json_response({'error': 'Insufficient data'}, status=400)
+        try:
+            import pandas as _pd
+            from analytics.features import get_feature_factory, FeatureCategory
+            df = self._candles_to_df(candles)
+            ff = get_feature_factory()
+            categories = [c for c in (cats or '').split(',') if c]
+            result = ff.compute_all(df, categories or None)
+            latest = result.iloc[-1].copy()
+            features = []
+            for name in result.columns:
+                if name in ('open', 'high', 'low', 'close', 'volume'):
+                    continue
+                meta = ff.registry.get(name)
+                features.append({
+                    'name': name,
+                    'category': meta.category.value if meta else 'unknown',
+                    'value': _sanitize(float(latest[name])) if _pd.notna(latest[name]) else None,
+                    'lookback': meta.lookback if meta else 1,
+                    'normalization': meta.normalization.value if meta else 'none',
+                    'formula': meta.formula if meta else '',
+                })
+            return web.json_response({
+                'asset': asset, 'timeframe': timeframe, 'bars': len(df),
+                'count': len(features),
+                'features': features,
+                'categories': sorted({f['category'] for f in features}),
+            })
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def analytics_registry(self, request: web.Request) -> web.Response:
+        """List every registered feature with its metadata."""
+        try:
+            from analytics.features import get_feature_registry
+            reg = get_feature_registry()
+            feats = []
+            for m in reg.list():
+                feats.append({
+                    'name': m.name, 'category': m.category.value, 'formula': m.formula,
+                    'source_data': m.source_data, 'lookback': m.lookback,
+                    'normalization': m.normalization.value, 'version': m.version,
+                    'fingerprint': m.fingerprint,
+                })
+            return web.json_response({'count': len(feats), 'features': feats})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def _get_options_chain(self, underlying: str) -> List[Dict]:
+        """Fetch and normalize an options chain for a given underlying."""
+        _map = {'XAU': 'XAUT', 'BTC': 'BTC', 'ETH': 'ETH'}
+        u = _map.get(underlying, underlying)
+        tickers = await delta_client.get_tickers()
+        opts = []
+        for t in tickers:
+            if not isinstance(t, dict):
+                continue
+            if t.get('underlying_asset_symbol') != u:
+                continue
+            if t.get('contract_type') not in ('call_options', 'put_options'):
+                continue
+            sym = t.get('symbol', '')
+            expiry = None
+            parts = sym.split('-')
+            if len(parts) >= 4:
+                date_part = parts[-1]
+                if len(date_part) == 6 and date_part.isdigit():
+                    dd, mm, yy = date_part[:2], date_part[2:4], date_part[4:]
+                    expiry = f"20{yy}-{mm}-{dd}"
+            opts.append({
+                'symbol': sym, 'underlying': u,
+                'type': 'call' if t.get('contract_type') == 'call_options' else 'put',
+                'strike': float(t.get('strike_price', 0) or 0),
+                'expiry': expiry,
+                'mark_price': float(t.get('mark_price', 0) or 0),
+                'mark_iv': float((t.get('quotes', {}) or {}).get('mark_iv', 0) or 0),
+                'spot': float(t.get('spot_price', 0) or 0),
+                'open_interest': float(t.get('oi_value_usd', 0) or 0),
+                'greeks': {k: float((t.get('greeks', {}) or {}).get(k, 0) or 0)
+                           for k in ('delta', 'gamma', 'theta', 'vega')},
+            })
+        return opts
+
+    async def analytics_microfeatures(self, request: web.Request) -> web.Response:
+        """Compute cross-sectional micro-features (derivatives, options IV,
+        cross-asset, journal behavior, event context) from live data.
+
+        Query params: symbol (single perp for derivative detail), underlying (options).
+        """
+        symbol = (request.query.get('symbol') or '').upper()
+        underlying = (request.query.get('underlying') or 'BTC').upper()
+        try:
+            tickers = await delta_client.get_tickers()
+        except Exception as e:
+            tickers = []
+        import asyncio as _aio
+        opts = await self._get_options_chain(underlying) if underlying in ('BTC', 'ETH', 'XAU') else []
+        # journal + calendar + account (non-blocking, tolerate failures)
+        journal = {}
+        calendar = {}
+        account = {}
+        try:
+            journal = _journal.stats()
+        except Exception:
+            journal = {}
+        try:
+            calendar = await economic_calendar.get_events(include_medium=False)
+        except Exception:
+            calendar = {}
+        try:
+            account = await delta_client.get_balance()
+            if isinstance(account, dict) and 'error' in account:
+                account = {}
+        except Exception:
+            account = {}
+        try:
+            from analytics.microfeatures import compute_all
+            result = await _aio.to_thread(
+                compute_all, tickers, symbol, opts, journal, calendar, account
+            )
+            result = {k: _sanitize(v) for k, v in result.items()}
+            return web.json_response({'asset': underlying, 'symbol': symbol, **result})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def analytics_regime(self, request: web.Request) -> web.Response:
+        """Detect the live market regime using the RegimeDetector on OHLCV."""
+        asset = (request.query.get('asset') or 'BTC').upper()
+        timeframe = request.query.get('timeframe') or '1h'
+        limit = int(request.query.get('limit', 300))
+        if not _validate_symbol(f"{asset}USD") or not _validate_timeframe(timeframe):
+            return web.json_response({'error': 'Invalid asset or timeframe'}, status=400)
+        try:
+            candles = await self._fetch_ohlcv(asset, timeframe, limit)
+        except Exception as e:
+            return web.json_response({'error': 'Failed to fetch candles: ' + str(e)}, status=502)
+        if len(candles) < 30:
+            return web.json_response({'error': 'Insufficient data'}, status=400)
+        try:
+            from analytics.regime import get_regime_detector
+            detector = get_regime_detector()
+            df = self._candles_to_df(candles)
+            state = await asyncio.to_thread(detector.detect, df)
+            return web.json_response({
+                'asset': asset, 'timeframe': timeframe, 'bars': len(df),
+                'trend': state.trend_direction.value,
+                'trend_strength': _sanitize(state.trend_strength),
+                'volatility': state.volatility_regime.value,
+                'vol_percentile': _sanitize(state.vol_percentile),
+                'liquidity': state.liquidity_regime.value,
+                'momentum': _sanitize(state.momentum_score),
+                'session': state.session,
+                'stress': state.stress_level.value,
+                'dominant': state.dominant_regime.value,
+                'confidence': _sanitize(state.confidence),
+            })
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def analytics_alpha_zoo(self, request: web.Request) -> web.Response:
+        """Run a set of factors through the AlphaZoo ranking engine on live OHLCV."""
+        asset = (request.query.get('asset') or 'BTC').upper()
+        timeframe = request.query.get('timeframe') or '1h'
+        limit = int(request.query.get('limit', 300))
+        if not _validate_symbol(f"{asset}USD") or not _validate_timeframe(timeframe):
+            return web.json_response({'error': 'Invalid asset or timeframe'}, status=400)
+        try:
+            candles = await self._fetch_ohlcv(asset, timeframe, limit)
+        except Exception as e:
+            return web.json_response({'error': 'Failed to fetch candles: ' + str(e)}, status=502)
+        if len(candles) < 40:
+            return web.json_response({'error': 'Insufficient data'}, status=400)
+        try:
+            from analytics.alpha.alpha_zoo import AlphaZoo, assign_market_regime
+            from analytics.features import get_feature_factory
+            import pandas as _pd
+            df = self._candles_to_df(candles)
+            ff = get_feature_factory()
+            future_ret = df['close'].pct_change().shift(-1).to_numpy()
+            returns = df['close'].pct_change().to_numpy()
+            regimes = assign_market_regime(returns)
+            zoo = AlphaZoo(ic_threshold=0.01)
+            factor_names = ['rsi_14', 'macd', 'adx_14', 'mfi_14', 'obv_slope', 'atr_14', 'bb_width', 'price_dist_sma50', 'willr_14', 'close_position', 'momentum_10', 'zscore20']
+            results = []
+            for name in factor_names:
+                try:
+                    series = ff.compute(df, [name])[name]
+                    vals = series.to_numpy()
+                    mask = ~_pd.isna(vals) & ~_pd.isna(future_ret)
+                    if mask.sum() < 30:
+                        continue
+                    decision = zoo.add_factor(name, vals[mask], future_ret[mask], regimes[mask])
+                    results.append({
+                        'name': name,
+                        'accepted': decision.get('accepted', False),
+                        'ic_mean': _sanitize(decision.get('metrics', {}).get('ic_mean', 0)),
+                        'ic_sharpe': _sanitize(decision.get('metrics', {}).get('ic_sharpe', 0)),
+                        'stability': _sanitize(decision.get('metrics', {}).get('stability', {}).get('stability_score', 0)),
+                        'turnover': _sanitize(decision.get('metrics', {}).get('ic_turnover', 0)),
+                        'reasons': decision.get('reasons', []) if not decision.get('accepted') else [],
+                    })
+                except Exception:
+                    continue
+            return web.json_response({
+                'asset': asset, 'timeframe': timeframe, 'bars': len(df),
+                'count': len(results), 'results': results,
+            })
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def analytics_leakage(self, request: web.Request) -> web.Response:
+        """Run leakage checks on a features DataFrame built from live OHLCV."""
+        asset = (request.query.get('asset') or 'BTC').upper()
+        timeframe = request.query.get('timeframe') or '1h'
+        limit = int(request.query.get('limit', 300))
+        if not _validate_symbol(f"{asset}USD") or not _validate_timeframe(timeframe):
+            return web.json_response({'error': 'Invalid asset or timeframe'}, status=400)
+        try:
+            candles = await self._fetch_ohlcv(asset, timeframe, limit)
+        except Exception as e:
+            return web.json_response({'error': 'Failed to fetch candles: ' + str(e)}, status=502)
+        if len(candles) < 40:
+            return web.json_response({'error': 'Insufficient data'}, status=400)
+        try:
+            from analytics.leakage import get_leakage_sentinel
+            from analytics.features import get_feature_factory
+            import pandas as _pd
+            df = self._candles_to_df(candles)
+            ff = get_feature_factory()
+            feats = ff.compute_all(df, ['momentum', 'volatility', 'volume'])
+            labels = _pd.DataFrame({'fwd_ret': df['close'].pct_change().shift(-1)})
+            sentinel = get_leakage_sentinel()
+            checks = sentinel.check_all(feats, labels)
+            return web.json_response({
+                'asset': asset, 'timeframe': timeframe,
+                'total_checks': len(checks),
+                'passed': sum(1 for c in checks if c.passed),
+                'failed': sum(1 for c in checks if not c.passed),
+                'details': [
+                    {'check': c.check_name, 'type': c.leakage_type.value, 'severity': c.severity.value,
+                     'passed': c.passed, 'message': c.message}
+                    for c in checks
+                ],
+            })
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
 
     async def market_banner(self, request: web.Request) -> web.Response:
         """Get realtime asset class price banner."""
