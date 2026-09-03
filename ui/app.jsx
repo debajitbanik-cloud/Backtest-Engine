@@ -98,6 +98,173 @@ const TRADING_STRATEGIES = {
 
 const ASSET_TABS = ['BTC', 'ETH', 'SOL', 'XAU', 'XRP', 'MEME'];
 
+/* ============================ BOT LIBRARY ============================ */
+const BOT_CATEGORIES = [
+  { id: 'btc', label: 'BTC Bots', icon: '₿', color: COLORS.amber },
+  { id: 'xau_arb', label: 'XAU Arbitrage', icon: '🥇', color: COLORS.gold || '#ffd700' },
+  { id: 'sol_scalp', label: 'SOL Scalping', icon: '◎', color: COLORS.green },
+  { id: 'xau_swing', label: 'XAU Swing', icon: '📈', color: COLORS.blue },
+  { id: 'options', label: 'Option Bots', icon: '⚡', color: COLORS.purple },
+  { id: 'basket', label: 'Basket Bots', icon: '🧺', color: COLORS.cyan },
+  { id: 'trade_logic', label: 'Trade Logic', icon: '🧠', color: COLORS.magenta || '#ff00ff' },
+];
+
+const BOTS = {
+  btc: [
+    { id: 'btc_ma_trend', name: 'BTC MA Trend Follower', class: 'trend', risk: 'Medium',
+      desc: 'Multi-timeframe MA crossover (EMA 50/200 daily + EMA 12/26 4h) with ATR trailing stop. Enters on golden cross confirmation, exits on death cross or ATR breach.',
+      params: { fast: 12, slow: 26, atr_mult: 2.5, tf: '4h', starting_cash: 10000 },
+      logic: 'trend_follow', assets: ['BTCUSD'], status: 'ready' },
+    { id: 'btc_rsi_div', name: 'BTC RSI Divergence Reversal', class: 'mean_reversion', risk: 'Medium',
+      desc: 'Trades RSI divergence on 4h chart: bullish divergence (price lower low, RSI higher long) triggers long; bearish divergence triggers short. Confirmed by volume spike.',
+      params: { period: 14, div_lookback: 20, tf: '4h', starting_cash: 10000 },
+      logic: 'reversion', assets: ['BTCUSD'], status: 'ready' },
+    { id: 'btc_breakout_vol', name: 'BTC Volume Breakout', class: 'breakout', risk: 'High',
+      desc: 'Donchian 20-channel breakout with volume confirmation (>2x 20-period avg volume). ATR-based position sizing, partial TP at 1R/2R/3R.',
+      params: { entry: 20, vol_mult: 2.0, atr_mult: 1.5, tf: '1h', starting_cash: 10000 },
+      logic: 'breakout', assets: ['BTCUSD'], status: 'ready' },
+    { id: 'btc_macd_momentum', name: 'BTC MACD Momentum', class: 'momentum', risk: 'Medium',
+      desc: 'MACD (12,26,9) histogram flip with signal line cross confirmation. Trades momentum bursts in trending BTC phases.',
+      params: { fast: 12, slow: 26, signal: 9, tf: '1h', starting_cash: 10000 },
+      logic: 'momentum', assets: ['BTCUSD'], status: 'ready' },
+    { id: 'btc_grid', name: 'BTC Grid Trader', class: 'grid', risk: 'High',
+      desc: 'Infinite grid around VWAP: places buy/sell orders every 0.5% ATR. Accumulates in range, reduces avg cost. Best for sideways BTC.',
+      params: { grid_step_pct: 0.5, atr_mult: 1.0, max_levels: 20, tf: '15m', starting_cash: 10000 },
+      logic: 'grid', assets: ['BTCUSD'], status: 'ready' },
+  ],
+  xau_arb: [
+    { id: 'xau_spot_fut_arb', name: 'XAU Spot-Futures Arb', class: 'arbitrage', risk: 'Low',
+      desc: 'Cash-and-carry arb: long XAU spot (XAUT) + short XAU perp when basis > funding cost + slippage buffer. Delta-neutral, harvests positive carry.',
+      params: { min_basis_bps: 15, max_pos_usd: 50000, tf: '1h', starting_cash: 10000 },
+      logic: 'arb_carry', assets: ['XAUTUSD'], status: 'ready' },
+    { id: 'xau_funding_arb', name: 'XAU Funding Rate Arb', class: 'arbitrage', risk: 'Low',
+      desc: 'Long perp when funding << spot carry, short when funding >> spot carry. Dynamically hedges with spot. Captures funding premium.',
+      params: { funding_thresh: 0.0001, hedge_ratio: 1.0, tf: '1h', starting_cash: 10000 },
+      logic: 'arb_funding', assets: ['XAUTUSD'], status: 'ready' },
+    { id: 'xau_cross_venue', name: 'XAU Cross-Venue Arb', class: 'arbitrage', risk: 'Medium',
+      desc: 'Monitors XAU price across Delta, Binance, Bybit perps. Executes when spread > 2x taker fee + latency buffer. Triangular with USDT.',
+      params: { min_spread_bps: 8, venues: ['delta','binance','bybit'], tf: '5m', starting_cash: 10000 },
+      logic: 'arb_cross_venue', assets: ['XAUTUSD'], status: 'dev' },
+    { id: 'xau_calendar_spread', name: 'XAU Calendar Spread', class: 'spread', risk: 'Low',
+      desc: 'Long near-term XAU option, short far-term same strike. Theta positive, benefits from term structure flattening in gold.',
+      params: { dte_near: 7, dte_far: 30, strike_atm: true, tf: '1d', starting_cash: 10000 },
+      logic: 'spread_calendar', assets: ['XAUTUSD'], status: 'dev' },
+  ],
+  sol_scalp: [
+    { id: 'sol_ma_scalp', name: 'SOL Fast MA Scalper', class: 'scalping', risk: 'High',
+      desc: 'EMA 9/21 cross on 5m chart with RSI filter (only long if RSI<60, short if RSI>40). Tight 0.5% SL, 1:1.5 TP. High frequency.',
+      params: { fast: 9, slow: 21, rsi_period: 14, tf: '5m', starting_cash: 10000 },
+      logic: 'scalp_ma', assets: ['SOLUSD'], status: 'ready' },
+    { id: 'sol_obv_flow', name: 'SOL OBV Order Flow', class: 'scalping', risk: 'High',
+      desc: 'Tracks OBV slope + CVD (cumulative volume delta). Enters when OBV breaks trendline with CVD confirmation. 30s-5m holds.',
+      params: { obv_lookback: 50, cvd_thresh: 1000, tf: '1m', starting_cash: 10000 },
+      logic: 'scalp_flow', assets: ['SOLUSD'], status: 'dev' },
+    { id: 'sol_vwap_reclaim', name: 'SOL VWAP Reclaim', class: 'scalping', risk: 'Medium',
+      desc: 'Buys when SOL reclaims VWAP after deviation >1.5% with volume surge. Exits at VWAP + 1 SD band. Classic intraday mean-revert.',
+      params: { vwap_dev: 1.5, vol_surge: 1.5, tf: '5m', starting_cash: 10000 },
+      logic: 'scalp_vwap', assets: ['SOLUSD'], status: 'ready' },
+    { id: 'sol_funding_scalp', name: 'SOL Funding Scalp', class: 'scalping', risk: 'Medium',
+      desc: 'Scalps funding rate discontinuities: shorts before funding when rate > 0.01%, covers after. 8h cycle aligned.',
+      params: { funding_thresh: 0.0001, tf: '1h', starting_cash: 10000 },
+      logic: 'scalp_funding', assets: ['SOLUSD'], status: 'ready' },
+  ],
+  xau_swing: [
+    { id: 'xau_ichimoku_swing', name: 'XAU Ichimoku Swing', class: 'swing', risk: 'Medium',
+      desc: 'Daily Ichimoku: long when price > cloud & Tenkan > Kijun & Chikou > price 26 bars ago. Holds weeks. Trail by Kijun.',
+      params: { tenkan: 9, kijun: 26, senkou_b: 52, tf: '1d', starting_cash: 10000 },
+      logic: 'swing_ichimoku', assets: ['XAUTUSD'], status: 'ready' },
+    { id: 'xau_seasonal', name: 'XAU Seasonal Swing', class: 'seasonal', risk: 'Medium',
+      desc: 'Gold seasonal patterns: long Jan-Feb (CNY demand), Aug-Sep (India wedding), Dec (central bank buying). Exits at historical resistance.',
+      params: { entry_months: [1,2,8,9,12], tf: '1d', starting_cash: 10000 },
+      logic: 'seasonal', assets: ['XAUTUSD'], status: 'ready' },
+    { id: 'xau_dxy_inverse', name: 'XAU DXY Inverse Swing', class: 'macro', risk: 'Medium',
+      desc: 'Trades XAU inverse correlation with DXY. Long XAU when DXY breaks below 200 DMA & RSI<30; short when DXY > 200 DMA & RSI>70.',
+      params: { dxy_ma: 200, rsi_period: 14, tf: '4h', starting_cash: 10000 },
+      logic: 'macro_dxy', assets: ['XAUTUSD'], status: 'ready' },
+    { id: 'xau_real_yield', name: 'XAU Real Yield Model', class: 'macro', risk: 'Medium',
+      desc: 'Fair value model: XAU = f(US 10Y real yield, DXY, oil). Long when XAU > model + 1 SD, short when < -1 SD. Weekly rebalance.',
+      params: { lookback: 252, z_entry: 1.0, tf: '1d', starting_cash: 10000 },
+      logic: 'macro_real_yield', assets: ['XAUTUSD'], status: 'dev' },
+  ],
+  options: [
+    { id: 'opt_iron_condor', name: 'Delta Iron Condor', class: 'income', risk: 'Low',
+      desc: 'Sells 16-delta put/call spreads on BTC/ETH/XAU weekly expiries. Manages at 21 DTE, rolls untested side. High prob, defined risk.',
+      params: { delta: 16, dte: 21, width: 10, tf: '1d', starting_cash: 10000 },
+      logic: 'opt_iron_condor', assets: ['BTCUSD','ETHUSD','XAUTUSD'], status: 'ready' },
+    { id: 'opt_diagonal', name: 'Diagonal Call Spread', class: 'directional', risk: 'Medium',
+      desc: 'Long 45-delta 60-day call, short 30-delta 30-day call. Positive theta, long vega. Bullish with time decay tailwind.',
+      params: { long_delta: 45, short_delta: 30, dte_long: 60, dte_short: 30, tf: '1d', starting_cash: 10000 },
+      logic: 'opt_diagonal', assets: ['BTCUSD','ETHUSD'], status: 'ready' },
+    { id: 'opt_straddle_gamma', name: 'Long Straddle Gamma Scalp', class: 'volatility', risk: 'High',
+      desc: 'Buys ATM straddle before major events (CPI, FOMC, earnings). Gamma scalps intraday to offset theta. Exits post-event IV crush.',
+      params: { dte: 7, event_calendar: true, tf: '1h', starting_cash: 10000 },
+      logic: 'opt_gamma_scalp', assets: ['BTCUSD','ETHUSD'], status: 'ready' },
+    { id: 'opt_covered_call', name: 'Covered Call Wheel', class: 'income', risk: 'Low',
+      desc: 'Wheel strategy: sell CSP → if assigned, sell covered call → if called, repeat. Runs on BTC/ETH/XAU. Compounds premium.',
+      params: { csp_delta: 20, cc_delta: 30, dte: 30, tf: '1d', starting_cash: 20000 },
+      logic: 'opt_wheel', assets: ['BTCUSD','ETHUSD','XAUTUSD'], status: 'ready' },
+  ],
+  basket: [
+    { id: 'meme_pump_5', name: 'Meme Pump 5-Coin Long', class: 'basket', risk: 'Very High',
+      desc: 'Longs top 5 memecoins by 24h volume (DOGE, SHIB, PEPE, WIF, BONK) when ALL show: RSI<45, volume >2x avg, funding <0.01%. Equal weight, 2% risk each.',
+      params: { min_vol_mult: 2.0, max_rsi: 45, max_funding: 0.0001, coins: 5, tf: '1h', starting_cash: 10000 },
+      logic: 'basket_meme_pump', assets: ['DOGEUSD','SHIBUSD','PEPEUSD','WIFUSD','BONKUSD'], status: 'ready' },
+    { id: 'meme_dump_5', name: 'Meme Dump 5-Coin Short', class: 'basket', risk: 'Very High',
+      desc: 'Shorts top 5 memecoins by 24h volume when ALL show: RSI>75, price >2SD above VWAP, funding >0.05%. Equal weight, 2% risk each.',
+      params: { min_rsi: 75, vwap_dev: 2.0, min_funding: 0.0005, coins: 5, tf: '4h', starting_cash: 10000 },
+      logic: 'basket_meme_dump', assets: ['DOGEUSD','SHIBUSD','PEPEUSD','WIFUSD','BONKUSD'], status: 'ready' },
+    { id: 'crypto_top10', name: 'Top 10 Crypto Momentum', class: 'basket', risk: 'Medium',
+      desc: 'Long top 10 perps by 24h turnover with positive 24h change & funding <0.02%. Monthly rebalance. Captures broad crypto beta.',
+      params: { top_n: 10, min_chg: 0, max_funding: 0.0002, tf: '1d', starting_cash: 10000 },
+      logic: 'basket_momentum', assets: ['BTCUSD','ETHUSD','SOLUSD','XRPUSD','DOGEUSD','SHIBUSD','PEPEUSD','WIFUSD','BONKUSD','ADAUSD'], status: 'ready' },
+    { id: 'defi_bluechip', name: 'DeFi Blue-Chip Basket', class: 'basket', risk: 'Medium',
+      desc: 'Long UNI, AAVE, LDO, CRV, MKR, SNX when sector momentum >0 & BTC trend up. Equal weight, 15% per asset max.',
+      params: { assets: ['UNIUSD','AAVEUSD','LDOUSD','CRVUSD','MKRUSD','SNXUSD'], tf: '4h', starting_cash: 10000 },
+      logic: 'basket_sector', assets: ['UNIUSD','AAVEUSD','LDOUSD','CRVUSD','MKRUSD','SNXUSD'], status: 'dev' },
+    { id: 'rwa_real_world', name: 'RWA (Real World Assets) Basket', class: 'basket', risk: 'Medium',
+      desc: 'Long tokenized T-bills (ONDO), real estate (REAL), private credit (CFG), gold (XAUT). Rebalances monthly. Low correlation to crypto.',
+      params: { assets: ['ONDOUSD','REALUSD','CFGUSD','XAUTUSD'], tf: '1d', starting_cash: 10000 },
+      logic: 'basket_rwa', assets: ['ONDOUSD','REALUSD','CFGUSD','XAUTUSD'], status: 'dev' },
+  ],
+  trade_logic: [
+    { category: 'Hedged Ideas', items: [
+      { name: 'Delta-Neutral Basis Trade', desc: 'Long spot + short perp when basis > funding. Harvests carry with zero directional risk.', logic: 'arb_carry' },
+      { name: 'Options Collar', desc: 'Long asset + long put (floor) + short call (cap). Defined risk/reward, sleeps well at night.', logic: 'opt_collar' },
+      { name: 'Calendar Spread', desc: 'Long near-term option + short far-term same strike. Theta positive, benefits from IV term structure.', logic: 'spread_calendar' },
+      { name: 'Pairs Trading (BTC/ETH)', desc: 'Long BTC / short ETH when ratio at 2SD extreme. Mean-reverts on ratio. Market-neutral.', logic: 'pairs_stat_arb' },
+      { name: 'Funding Rate Arb', desc: 'Long perp when funding negative, short when funding > spot carry. Delta-hedged with spot.', logic: 'arb_funding' },
+    ]},
+    { category: 'Scalping Ideas', items: [
+      { name: 'VWAP Reclaim Scalp', desc: 'Price deviates >1.5% from VWAP → reclaim with volume surge → scalp back to VWAP + 1SD.', logic: 'scalp_vwap' },
+      { name: 'OBV/CVD Flow Scalp', desc: 'OBV trendline break + CVD confirmation. 30s-5m holds. Pure order flow.', logic: 'scalp_flow' },
+      { name: 'Funding Rate Scalp', desc: 'Short before 8h funding when rate > 0.01%, cover after. Risk-free if hedged.', logic: 'scalp_funding' },
+      { name: 'Order Book Imbalance', desc: 'Bid/ask volume imbalance >3:1 at key level → scalp 2-5 ticks. Microstructure edge.', logic: 'scalp_obi' },
+      { name: 'MA Cross Scalp (5m)', desc: 'EMA 9/21 cross on 5m with RSI filter. Tight SL (0.5%), 1:1.5 TP. High win-rate.', logic: 'scalp_ma' },
+    ]},
+    { category: 'Perpetuals Multi-Indicator Confluence', items: [
+      { name: 'Trend + Momentum + Volume', desc: 'EMA 50>200 (trend) + MACD hist >0 (momentum) + vol >1.5x avg (conviction). All 3 align = high prob.', logic: 'confluence_trend_mom_vol' },
+      { name: 'Breakout + Funding + OI', desc: 'Donchian break + funding <0.01% (no crowded long) + OI rising (new money). Strong trend confirmation.', logic: 'confluence_breakout_funding_oi' },
+      { name: 'SMC + Order Block + FVG', desc: 'Price taps order block + fair value gap fill + CHoCH on lower TF. Institutional entry model.', logic: 'smc_ob_fvg' },
+      { name: 'Wyckoff Spring + Volume', desc: 'Spring below support with low volume → immediate reclaim with high volume. Accumulation schematic.', logic: 'wyckoff_spring' },
+      { name: 'Harmonic + RSI Div', desc: 'Gartley/bat pattern completion + RSI divergence. Precision entry with defined risk.', logic: 'harmonic_div' },
+    ]},
+    { category: 'Smart Money Concept (SMC)', items: [
+      { name: 'Order Block Entry', desc: 'Identify last up-candle before down-move (bearish OB) or last down-candle before up-move (bullish OB). Enter on retest.', logic: 'smc_order_block' },
+      { name: 'Fair Value Gap (FVG)', desc: '3-candle gap where candle 1 high < candle 3 low (bullish FVG) or candle 1 low > candle 3 high (bearish). Price fills 50%+ often.', logic: 'smc_fvg' },
+      { name: 'Break of Structure (BOS)', desc: 'Higher high + higher low sequence broken → trend change. Enter on retest of broken structure.', logic: 'smc_bos' },
+      { name: 'Change of Character (CHoCH)', desc: 'Lower high + lower low in uptrend (or vice versa). First sign of trend reversal. Early entry.', logic: 'smc_choch' },
+      { name: 'Liquidity Sweep', desc: 'Price sweeps equal highs/lows (stop hunt) then reverses. Enter on rejection candle after sweep.', logic: 'smc_liquidity' },
+    ]},
+    { category: 'Real-World Token (RWA) Ideas', items: [
+      { name: 'Tokenized T-Bill Carry', desc: 'Long ONDO/BUIDL (tokenized Treasuries) earning ~5% risk-free. Hedge with short BTC if crypto beta unwanted.', logic: 'rwa_tbill_carry' },
+      { name: 'Real Estate Yield', desc: 'Long REAL/PROPC (tokenized real estate) for 8-12% yield. Low correlation to crypto. Monthly rebalance.', logic: 'rwa_real_estate' },
+      { name: 'Private Credit Yield', desc: 'Long CFG/MAKER (tokenized private credit) for 10-15% yield. Senior tranche, low default risk.', logic: 'rwa_credit' },
+      { name: 'Gold Token Carry', desc: 'Long XAUT (Tether Gold) vs short GC futures. Arb storage cost vs funding. Pure gold carry.', logic: 'rwa_gold_carry' },
+      { name: 'Commodity Index Basket', desc: 'Long DBC/USOI/GLD tokenized equivalents. Broad commodity beta, inflation hedge.', logic: 'rwa_commodity_basket' },
+    ]},
+  ],
+};
+
 /* ============================ SMALL COMPONENTS ============================ */
 function StatusDot({ on, color }) {
   return React.createElement('span', { style: { display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: on ? (color || COLORS.green) : COLORS.red, boxShadow: on ? `0 0 6px ${color || COLORS.green}` : 'none', marginRight: 6 } });
@@ -132,6 +299,108 @@ function Section({ title, right, children }) {
     ),
     children
   );
+}
+
+/* ============================ CHART COMPONENT ============================ */
+function Chart({ type, data, width, height, color, background }) {
+  const canvasRef = React.useRef(null);
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = width || canvas.width;
+    const h = height || canvas.height;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    if (background) {
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    const strokeColor = color || COLORS.blue;
+
+    if (type === 'sparkline') {
+      if (!data || data.length < 2) return;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const range = max - min || 1;
+      ctx.beginPath();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      data.forEach((v, i) => {
+        const x = (i / (data.length - 1)) * w;
+        const y = h - ((v - min) / range) * h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      // Gradient fill
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, strokeColor + '33');
+      grad.addColorStop(1, strokeColor + '00');
+      ctx.fillStyle = grad;
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'bar') {
+      if (!data || data.length === 0) return;
+      const max = Math.max(...data.map(d => d[1]));
+      const barW = w / (data.length * 1.5);
+      data.forEach((d, i) => {
+        const h_ = (d[1] / max) * (h - 10);
+        const x = i * (w / data.length) + (w / data.length - barW) / 2;
+        const y = h - h_ - 5;
+        ctx.fillStyle = strokeColor;
+        ctx.fillRect(x, y, barW, h_);
+        // Label
+        ctx.fillStyle = COLORS.textTertiary;
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(d[0], x + barW / 2, h - 2);
+      });
+    } else if (type === 'distribution') {
+      if (!data || data.length === 0) return;
+      const max = Math.max(...data.map(d => d[1]));
+      const barW = w / data.length;
+      data.forEach((d, i) => {
+        const h_ = (d[1] / max) * (h - 20);
+        const x = i * barW + barW / 2;
+        const y = h - h_ - 10;
+        ctx.beginPath();
+        ctx.moveTo(x - barW / 2, h - 10);
+        ctx.lineTo(x - barW / 2, y);
+        ctx.lineTo(x + barW / 2, y);
+        ctx.lineTo(x + barW / 2, h - 10);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, h, 0, y);
+        grad.addColorStop(0, strokeColor + '88');
+        grad.addColorStop(1, strokeColor + '22');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        // Label
+        ctx.fillStyle = COLORS.textTertiary;
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(d[0], x, h - 2);
+      });
+    }
+  }, [type, data, width, height, color, background]);
+
+  return React.createElement('canvas', {
+    ref: canvasRef,
+    width: width || 300,
+    height: height || 120,
+    style: { width: width || 300, height: height || 120 }
+  });
 }
 
 function Tab({ active, onClick, children, small }) {
@@ -488,12 +757,130 @@ function AnalyticsView() {
       React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
         subTabs.map(s => React.createElement(Tab, { key: s.id, small: true, active: sub === s.id, onClick: () => setSub(s.id) }, s.label))
       ),
+      React.createElement(AnalyticsInsightCards, { asset, tf }),
       sub === 'features' && React.createElement(FeaturesView, { asset, tf }),
       sub === 'micro' && React.createElement(MicroFeaturesView, { asset }),
       sub === 'regime' && React.createElement(RegimeView, { asset, tf }),
       sub === 'alpha' && React.createElement(AlphaZooView, { asset, tf }),
       sub === 'leakage' && React.createElement(LeakageView, { asset, tf }),
       sub === 'registry' && React.createElement(RegistryView, null)
+    )
+  );
+}
+
+function AnalyticsInsightCards({ asset, tf }) {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [f, r, a] = await Promise.all([
+          fetch(`${API}/analytics/features?asset=${asset}&timeframe=${tf}&limit=300`).then(r => r.json()),
+          fetch(`${API}/analytics/regime?asset=${asset}&timeframe=${tf}`).then(r => r.json()),
+          fetch(`${API}/analytics/alpha-zoo?asset=${asset}&timeframe=${tf}&limit=300`).then(r => r.json()),
+        ]);
+        setData({ features: f, regime: r, alpha: a });
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, [asset, tf]);
+
+  if (!data) return React.createElement('div', { style: { height: 80 } });
+
+  const f = data.features || {};
+  const r = data.regime || {};
+  const a = data.alpha || {};
+
+  // Feature distribution by category
+  const catDist = (f.features || []).reduce((acc, feat) => {
+    acc[feat.category] = (acc[feat.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Top features by absolute value
+  const topFeats = (f.features || [])
+    .filter(feat => feat.value != null)
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+    .slice(0, 8);
+
+  return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 16 } },
+    // Regime Card
+    React.createElement(Card, { pad: 14 },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+        React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text } }, 'MARKET REGIME'),
+        React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, tf)
+      ),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 } },
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.bgElevated, borderRadius: 8 } },
+          React.createElement('div', { style: { fontSize: 24, fontWeight: 800, color: r.trend_direction === 'up' ? COLORS.green : r.trend_direction === 'down' ? COLORS.red : COLORS.amber, fontFamily: 'JetBrains Mono, monospace' } }, String(r.trend_direction || '-').toUpperCase()),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'TREND')
+        ),
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.bgElevated, borderRadius: 8 } },
+          React.createElement('div', { style: { fontSize: 24, fontWeight: 800, color: r.volatility_regime === 'high' ? COLORS.red : COLORS.green, fontFamily: 'JetBrains Mono, monospace' } }, String(r.volatility_regime || '-').toUpperCase()),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'VOLATILITY')
+        ),
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.bgElevated, borderRadius: 8 } },
+          React.createElement('div', { style: { fontSize: 24, fontWeight: 800, color: r.momentum_score > 0 ? COLORS.green : COLORS.red, fontFamily: 'JetBrains Mono, monospace' } }, (r.momentum_score || 0).toFixed(2)),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'MOMENTUM')
+        )
+      )
+    ),
+    // Feature Category Distribution
+    React.createElement(Card, { pad: 14 },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+        React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text } }, 'FEATURE CATEGORIES'),
+        React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, Object.values(catDist).reduce((a,b)=>a+b,0) + ' features')
+      ),
+      React.createElement(Chart, {
+        type: 'bar',
+        data: Object.entries(catDist).map(([k,v]) => [k, v]),
+        width: '100%',
+        height: 100,
+        color: COLORS.blue
+      })
+    ),
+    // Top Features by Magnitude
+    React.createElement(Card, { pad: 14 },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+        React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text } }, 'TOP FEATURES (|VALUE|)'),
+        React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Latest snapshot')
+      ),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+        topFeats.map(feat => React.createElement('div', { key: feat.name, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: COLORS.bgElevated, borderRadius: 6 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+            React.createElement('span', { style: { width: 10, height: 10, borderRadius: 2, background: CAT_COLOR[feat.category] || COLORS.blue } }),
+            React.createElement('span', { style: { fontSize: 11, fontWeight: 600, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, feat.name),
+            React.createElement('span', { style: { fontSize: 10, color: CAT_COLOR[feat.category] || COLORS.blue } }, feat.category)
+          ),
+          React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: feat.value >= 0 ? COLORS.green : COLORS.red, fontFamily: 'JetBrains Mono, monospace' } }, feat.value.toFixed(4))
+        ))
+      )
+    ),
+    // Alpha Zoo Summary
+    React.createElement(Card, { pad: 14 },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+        React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text } }, 'ALPHA ZOO'),
+        React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, (a.factors || []).length + ' factors')
+      ),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 } },
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.green + '22', borderRadius: 8, border: `1px solid ${COLORS.green}44` } },
+          React.createElement('div', { style: { fontSize: 20, fontWeight: 800, color: COLORS.green, fontFamily: 'JetBrains Mono, monospace' } }, (a.factors || []).filter(f => f.accepted).length),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'ACCEPTED')
+        ),
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.red + '22', borderRadius: 8, border: `1px solid ${COLORS.red}44` } },
+          React.createElement('div', { style: { fontSize: 20, fontWeight: 800, color: COLORS.red, fontFamily: 'JetBrains Mono, monospace' } }, (a.factors || []).filter(f => !f.accepted).length),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'REJECTED')
+        ),
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.amber + '22', borderRadius: 8, border: `1px solid ${COLORS.amber}44` } },
+          React.createElement('div', { style: { fontSize: 20, fontWeight: 800, color: COLORS.amber, fontFamily: 'JetBrains Mono, monospace' } }, (a.factors || []).reduce((sum,f)=>sum+(f.ic||0),0) / Math.max((a.factors||[]).length,1) || 0).toFixed(3),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'AVG IC')
+        ),
+        React.createElement('div', { style: { textAlign: 'center', padding: '8px', background: COLORS.cyan + '22', borderRadius: 8, border: `1px solid ${COLORS.cyan}44` } },
+          React.createElement('div', { style: { fontSize: 20, fontWeight: 800, color: COLORS.cyan, fontFamily: 'JetBrains Mono, monospace' } }, (a.factors || []).reduce((sum,f)=>sum+(f.ir||0),0) / Math.max((a.factors||[]).length,1) || 0).toFixed(3),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'AVG IR')
+        )
+      )
     )
   );
 }
@@ -755,6 +1142,161 @@ function RegistryView() {
   );
 }
 
+function BotsView() {
+  const [cat, setCat] = useState('btc');
+  const [selBot, setSelBot] = useState(null);
+  const [running, setRunning] = useState({});
+  const [logs, setLogs] = useState({});
+
+  const bots = BOTS[cat] || [];
+  const categories = BOT_CATEGORIES;
+
+  const toggleBot = async (bot) => {
+    const id = bot.id;
+    const next = !running[id];
+    setRunning(prev => ({ ...prev, [id]: next }));
+    if (next) {
+      try {
+        const r = await fetch(`${API}/bot/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+          body: JSON.stringify({ bot_id: id, category: cat, params: bot.params })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Failed to start');
+        addLog(id, `[${new Date().toLocaleTimeString()}] Started: ${bot.name}`);
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.ping();
+      } catch (e) {
+        setRunning(prev => ({ ...prev, [id]: false }));
+        addLog(id, `[${new Date().toLocaleTimeString()}] Error: ${e.message}`);
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+      }
+    } else {
+      try {
+        await fetch(`${API}/bot/stop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+          body: JSON.stringify({ bot_id: id })
+        });
+        addLog(id, `[${new Date().toLocaleTimeString()}] Stopped: ${bot.name}`);
+      } catch (e) {
+        addLog(id, `[${new Date().toLocaleTimeString()}] Stop error: ${e.message}`);
+      }
+    }
+  };
+
+  const addLog = (id, msg) => {
+    setLogs(prev => ({ ...prev, [id]: [...(prev[id] || []), msg].slice(-50) }));
+  };
+
+  const botLogs = selBot ? (logs[selBot.id] || []) : [];
+
+  return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '300px 1fr', gap: 18, height: 'calc(100vh - 120px)' } },
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+      React.createElement(Card, { pad: 14 },
+        React.createElement('div', { style: { fontSize: 14, fontWeight: 800, marginBottom: 12, color: COLORS.text } }, 'BOT CATEGORIES'),
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+          categories.map(c => React.createElement('button', {
+            key: c.id,
+            onClick: () => { setCat(c.id); setSelBot(null); },
+            style: {
+              padding: '10px 12px', borderRadius: 8, textAlign: 'left', border: 'none',
+              background: cat === c.id ? c.color + '22' : 'transparent',
+              borderLeft: cat === c.id ? `3px solid ${c.color}` : '3px solid transparent',
+              color: cat === c.id ? c.color : COLORS.textSecondary,
+              fontSize: 13, fontWeight: cat === c.id ? 700 : 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8
+            }
+          }, c.icon, ' ', c.label))
+        )
+      ),
+      bots.length && React.createElement(Card, { pad: 14, style: { flex: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' } },
+        React.createElement('div', { style: { fontSize: 14, fontWeight: 800, marginBottom: 12, color: COLORS.text } }, 'AVAILABLE BOTS'),
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+          bots.map(b => React.createElement('div', {
+            key: b.id,
+            onClick: () => setSelBot(b),
+            style: {
+              padding: '12px', borderRadius: 8, cursor: 'pointer',
+              background: selBot?.id === b.id ? COLORS.blue + '11' : COLORS.bgElevated,
+              border: selBot?.id === b.id ? `1px solid ${COLORS.blue}` : `1px solid ${COLORS.border}`,
+              transition: 'all 0.15s'
+            }
+          },
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 } },
+              React.createElement('div', null,
+                React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: COLORS.text } }, b.name),
+                React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 } }, b.class)
+              ),
+              React.createElement('span', { style: { fontSize: 10, padding: '2px 6px', borderRadius: 4, background: b.status === 'ready' ? COLORS.green + '22' : COLORS.amber + '22', color: b.status === 'ready' ? COLORS.green : COLORS.amber, fontWeight: 700 } }, b.status.toUpperCase())
+            ),
+            React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 1.4, marginBottom: 8 } }, b.desc.slice(0, 100) + '…'),
+            React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' } },
+              React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Risk: ' + b.risk),
+              React.createElement('span', { style: { color: COLORS.textTertiary } }, b.assets.join(', ')),
+              running[b.id] && React.createElement('span', { style: { color: COLORS.green, fontWeight: 700 } }, '● RUNNING')
+            )
+          ))
+        )
+      )
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+      selBot ? React.createElement(Card, { pad: 16, style: { flex: 1, display: 'flex', flexDirection: 'column' } },
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+          React.createElement('div', null,
+            React.createElement('div', { style: { fontSize: 16, fontWeight: 800, color: COLORS.text } }, selBot.name),
+            React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginTop: 2 } }, selBot.class.toUpperCase() + ' • ' + selBot.logic.replace('_', ' ').toUpperCase())
+          ),
+          React.createElement('button', {
+            onClick: () => toggleBot(selBot),
+            disabled: running[selBot.id],
+            style: {
+              padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13,
+              background: running[selBot.id] ? COLORS.red : COLORS.green,
+              color: '#000', cursor: 'pointer',
+            }
+          }, running[selBot.id] ? 'STOP BOT' : 'START BOT')
+        ),
+        React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.6, marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${COLORS.border}` } }, selBot.desc),
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 } },
+          Object.entries(selBot.params).map(([k, v]) => React.createElement(Card, { pad: 10, key: k },
+            React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 } }, k),
+            React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, String(v))
+          ))
+        ),
+        React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'BOT LOG'),
+        React.createElement('div', { style: { flex: 1, background: '#08090c', borderRadius: 8, padding: 10, overflowY: 'auto', fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: COLORS.green, minHeight: 180 } },
+          botLogs.length === 0 ? React.createElement('div', { style: { color: COLORS.textTertiary, textAlign: 'center', padding: 20 } }, 'No logs yet. Start the bot to see activity.') :
+          botLogs.map((l, i) => React.createElement('div', { key: i, style: { padding: '2px 0', borderBottom: `1px solid ${COLORS.border}22` } }, l))
+        )
+      ) :
+      cat === 'trade_logic' ? React.createElement(Card, { pad: 16, style: { flex: 1 } },
+        React.createElement('div', { style: { fontSize: 16, fontWeight: 800, color: COLORS.text, marginBottom: 16 } }, 'TRADE LOGIC CLASSIFICATION'),
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
+          BOTS.trade_logic.map(group => React.createElement(Card, { pad: 14, key: group.category },
+            React.createElement('div', { style: { fontSize: 13, fontWeight: 800, color: COLORS.magenta || '#ff00ff', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 } }, '🧠', group.category),
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+              group.items.map(item => React.createElement('div', {
+                style: { padding: '10px 12px', background: COLORS.bgElevated, borderRadius: 8, border: `1px solid ${COLORS.border}`, cursor: 'pointer' }
+              },
+                React.createElement('div', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text, marginBottom: 4 } }, item.name),
+                React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 1.5 } }, item.desc),
+                React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginTop: 4, fontFamily: 'JetBrains Mono, monospace' } }, 'Logic: ' + item.logic)
+              ))
+            )
+          ))
+        )
+      ) :
+      React.createElement(Card, { pad: 16, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+        React.createElement('div', { style: { textAlign: 'center', color: COLORS.textTertiary } },
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 700, marginBottom: 8 } }, 'Select a bot to view details'),
+          React.createElement('div', { style: { fontSize: 12 } }, 'Or click "TRADE LOGIC" to explore strategy classifications')
+        )
+      )
+    )
+  );
+}
+
 const CAT_COLOR = {
   price: '#4e8cff', momentum: '#2ecc71', volatility: '#f0a500', volume: '#00c8e8',
   microstructure: '#9b59b6', derivatives: '#e74c3c', cross_asset: '#e91e63', time: '#8b8fa3',
@@ -878,7 +1420,15 @@ function TrendingPairs({ limit }) {
       (rows || []).map((x, i) => {
         const up = x.chg >= 0;
         const c = up ? COLORS.green : COLORS.red;
-        return React.createElement('div', { key: x.symbol + i, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 } },
+        return React.createElement('div', {
+          key: x.symbol + i,
+          style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' },
+          onClick: () => {
+            const sym = x.symbol.replace('USD', '');
+            const tvSymbol = sym === 'XAUT' ? 'XAUTUSDT' : sym + 'USDT';
+            window.open('https://www.tradingview.com/chart/?symbol=' + tvSymbol, '_blank');
+          }
+        },
           React.createElement('span', { style: { width: 18, textAlign: 'right', fontFamily: E.fontMono || 'inherit', fontSize: 10, color: COLORS.textTertiary } }, i + 1),
           React.createElement('span', { style: { flex: 1, fontWeight: 700, color: COLORS.text, fontFamily: E.fontDisplay || 'inherit' } }, x.symbol.replace(/USD$/, '')),
           React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', color: COLORS.textSecondary } }, '$' + Number(x.price).toLocaleString(undefined, { maximumFractionDigits: 4 })),
@@ -1516,6 +2066,59 @@ function NotificationRuleCard({ r, onSave, onDelete }) {
 }
 
 /* ============================ MAIN APP ============================ */
+function SlimBanner() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/market/banner?slim=true`);
+        const d = await r.json();
+        if (d && d.banner) setData(d.banner);
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 10000);
+    return () => clearInterval(iv);
+  }, []);
+  if (!data) return React.createElement('div', { style: { height: 24 } });
+  return React.createElement('div', {
+    style: {
+      position: 'absolute', top: 0, left: 0, right: 0, height: 24,
+      background: 'linear-gradient(90deg, #0a0b0f 0%, #111318 50%, #0a0b0f 100%)',
+      borderBottom: `1px solid ${COLORS.border}`,
+      overflow: 'hidden', whiteSpace: 'nowrap', zIndex: 100
+    }
+  },
+    React.createElement('div', {
+      style: {
+        display: 'inline-flex', gap: 40, paddingLeft: '100%',
+        animation: 'marquee 30s linear infinite',
+        fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600
+      }
+    },
+      data.map((a, i) => React.createElement('span', {
+        key: a.symbol,
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 20px',
+          color: a.change_pct >= 0 ? COLORS.green : COLORS.red
+        }
+      },
+        React.createElement('span', { style: { fontSize: 14 } }, a.emoji),
+        React.createElement('span', null, a.symbol),
+        React.createElement('span', { style: { fontWeight: 700 } }, a.last.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })),
+        React.createElement('span', null, (a.change_pct >= 0 ? '▲ ' : '▼ ') + Math.abs(a.change_pct).toFixed(2) + '%')
+      ))
+    ),
+    React.createElement('style', null, `
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+    `)
+  );
+}
+
+/* ============================ MAIN APP ============================ */
 function App() {
   const E = window.Theme && window.Theme.EXTRA || {};
   const [tab, setTab] = useState('dashboard');
@@ -1612,6 +2215,7 @@ function App() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'bots', label: 'Bots' },
     { id: 'options', label: 'Options' },
     { id: 'strategies', label: 'Strategies' },
     { id: 'calendar', label: 'Calendar' },
@@ -1622,7 +2226,8 @@ function App() {
   ];
 
   return React.createElement('div', { style: { minHeight: '100vh', background: COLORS.bgRoot, color: COLORS.text } },
-    React.createElement('header', { style: { position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,11,15,0.95)', borderBottom: `1px solid ${COLORS.border}`, padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(8px)' } },
+    React.createElement(SlimBanner, null),
+    React.createElement('header', { style: { position: 'sticky', top: 24, zIndex: 50, background: 'rgba(10,11,15,0.95)', borderBottom: `1px solid ${COLORS.border}`, padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(8px)' } },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
         React.createElement('div', { style: { width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#4e8cff,#9b59b6)' } }),
         React.createElement('span', { style: { fontSize: 15, fontFamily: E.fontDisplay || 'inherit', fontWeight: 800, letterSpacing: 0.4 } }, 'Trading Command Center')
@@ -1647,6 +2252,7 @@ function App() {
     ),
     React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto' } },
       tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }),
+      tab === 'bots' && React.createElement(BotsView, null),
       tab === 'options' && React.createElement(OptionsView, null),
       tab === 'strategies' && React.createElement(StrategiesView, null),
       tab === 'calendar' && React.createElement(CalendarView, null),

@@ -209,6 +209,9 @@ class PythonBridge:
         self.app.router.add_get('/analytics/alpha-zoo', self.analytics_alpha_zoo)
         self.app.router.add_get('/analytics/leakage', self.analytics_leakage)
         self.app.router.add_get('/analytics/registry', self.analytics_registry)
+        self.app.router.add_post('/bot/start', self.bot_start)
+        self.app.router.add_post('/bot/stop', self.bot_stop)
+        self.app.router.add_get('/bot/status', self.bot_status)
     
     async def start(self) -> None:
         """Start the bridge server."""
@@ -2088,6 +2091,58 @@ class PythonBridge:
         except Exception as e:
             return web.json_response({'error': str(e)}, status=500)
 
+    async def bot_start(self, request: web.Request) -> web.Response:
+        """Start a trading bot by ID with given params."""
+        try:
+            body = await request.json()
+        except Exception:
+            return web.json_response({'error': 'Invalid JSON body'}, status=400)
+        bot_id = body.get('bot_id')
+        category = body.get('category', 'btc')
+        params = body.get('params', {})
+        if not bot_id:
+            return web.json_response({'error': 'bot_id required'}, status=400)
+        # In a full implementation, this would spawn a background task
+        # For now, return success with a mock PID
+        import os, time
+        mock_pid = os.getpid() + hash(bot_id) % 10000
+        return web.json_response({
+            'status': 'ok',
+            'bot_id': bot_id,
+            'category': category,
+            'pid': mock_pid,
+            'params': params,
+            'started_at': time.time(),
+            'message': f'Bot {bot_id} started (simulated)'
+        })
+
+    async def bot_stop(self, request: web.Request) -> web.Response:
+        """Stop a running bot by ID."""
+        try:
+            body = await request.json()
+        except Exception:
+            return web.json_response({'error': 'Invalid JSON body'}, status=400)
+        bot_id = body.get('bot_id')
+        if not bot_id:
+            return web.json_response({'error': 'bot_id required'}, status=400)
+        return web.json_response({
+            'status': 'ok',
+            'bot_id': bot_id,
+            'message': f'Bot {bot_id} stopped (simulated)'
+        })
+
+    async def bot_status(self, request: web.Request) -> web.Response:
+        """Get status of all bots or a specific bot."""
+        bot_id = request.query.get('bot_id')
+        # Mock status for demonstration
+        return web.json_response({
+            'bots': {
+                'btc_ma_trend': {'running': False, 'category': 'btc'},
+                'xau_spot_fut_arb': {'running': False, 'category': 'xau_arb'},
+                'sol_ma_scalp': {'running': False, 'category': 'sol_scalp'},
+            }
+        })
+
     async def _get_options_chain(self, underlying: str) -> List[Dict]:
         """Fetch and normalize an options chain for a given underlying."""
         _map = {'XAU': 'XAUT', 'BTC': 'BTC', 'ETH': 'ETH'}
@@ -2288,9 +2343,10 @@ class PythonBridge:
             return web.json_response({'error': str(e)}, status=500)
 
     async def market_banner(self, request: web.Request) -> web.Response:
-        """Get realtime asset class price banner."""
+        """Get realtime asset class price banner. Query: ?slim=true for 4-asset marquee."""
         try:
-            data = await asyncio.to_thread(fetch_market_banner)
+            slim = request.query.get('slim', 'false').lower() == 'true'
+            data = await asyncio.to_thread(fetch_market_banner, slim=slim)
             return web.json_response(data)
         except Exception as e:
             return web.json_response({'error': str(e), 'assets': [], 'count': 0}, status=500)
