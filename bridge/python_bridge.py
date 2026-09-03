@@ -25,7 +25,16 @@ from aiohttp.web import middleware
 @middleware
 async def cors_middleware(request: web.Request, handler):
     """Add CORS headers for cross-origin UI requests."""
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        return web.Response(status=204, headers={
+            'Access-Control-Allow-Origin': request.headers.get('Origin', ''),
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        })
     response = await handler(request)
+    if response is None:
+        response = web.Response(status=500)
     origin = request.headers.get('Origin', '')
     allowed = {'http://localhost:3000', 'http://127.0.0.1:3000'}
     if origin in allowed:

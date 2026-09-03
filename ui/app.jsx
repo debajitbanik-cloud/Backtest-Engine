@@ -1304,6 +1304,170 @@ const CAT_COLOR = {
 };
 
 
+/* ============================ PAIR METRICS PANEL ============================ */
+function PairMetricsPanel({ symbol, timeframe, health }) {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const [tickerRes, regimeRes] = await Promise.all([
+          fetch(`${API}/delta/tickers`),
+          fetch(`${API}/analytics/regime?asset=${symbol}&timeframe=${timeframe}`)
+        ]);
+        const [tickerData, regimeData] = await Promise.all([tickerRes.json(), regimeRes.json()]);
+        
+        const tickers = tickerData.tickers || [];
+        const perp = tickers.find(t => t && t.symbol === `${symbol}USD` || t.symbol === `${symbol}USDT`);
+        
+        setMetrics({ perp, regime: regimeData });
+      } catch (e) { setErr(String(e)); }
+      setLoading(false);
+    };
+    load();
+    const iv = setInterval(load, 15000);
+    return () => clearInterval(iv);
+  }, [symbol, timeframe]);
+
+  if (loading && !metrics) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { color: COLORS.textTertiary, textAlign: 'center' } }, 'Loading metrics…'));
+
+  const perp = metrics?.perp;
+  const regime = metrics?.regime;
+
+  if (!perp) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { color: COLORS.red, textAlign: 'center' } }, `No perp data for ${symbol}`));
+
+  const price = perp.mark_price || perp.close || 0;
+  const chg24 = perp.mark_change_24h || perp.ltp_change_24h || 0;
+  const vol24 = perp.turnover_usd || 0;
+  const oi = perp.oi_value_usd || 0;
+  const oiChg = perp.oi_change_usd_6h || 0;
+  const funding = perp.funding_rate || 0;
+  const basis = perp.mark_basis || 0;
+  const lev = perp.leverage || 0;
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 } },
+    React.createElement(Section, { title: `${symbol} Metrics & Stats` },
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 } },
+        React.createElement(MetricCard, { label: 'Mark Price', value: '$' + Number(price).toLocaleString(undefined, { maximumFractionDigits: 2 }), color: COLORS.text }),
+        React.createElement(MetricCard, { label: '24h Change', value: fmtPct(chg24), color: chg24 >= 0 ? COLORS.green : COLORS.red }),
+        React.createElement(MetricCard, { label: '24h Volume', value: fmtCur(vol24), color: COLORS.blue }),
+        React.createElement(MetricCard, { label: 'Open Interest', value: fmtCur(oi), color: COLORS.cyan }),
+        React.createElement(MetricCard, { label: 'OI Change (6h)', value: oiChg >= 0 ? '+' + fmtPct(oiChg/oi) : fmtPct(oiChg/oi), color: oiChg >= 0 ? COLORS.green : COLORS.red }),
+        React.createElement(MetricCard, { label: 'Funding Rate', value: fmtPct(funding * 100) + ' (8h)', color: funding >= 0 ? COLORS.amber : COLORS.green }),
+        React.createElement(MetricCard, { label: 'Mark Basis', value: fmtPct(basis/price*100), color: basis >= 0 ? COLORS.amber : COLORS.blue }),
+        React.createElement(MetricCard, { label: 'Max Leverage', value: lev + 'x', color: COLORS.purple })
+      )
+    ),
+    health && health.has_auth && React.createElement(QuickTradingPanel, { symbol: symbol + 'USD', perp })
+  );
+}
+
+function MetricCard({ label, value, color }) {
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 } }, label),
+    React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: color, fontFamily: 'JetBrains Mono, monospace' } }, value)
+  );
+}
+
+function QuickTradingPanel({ symbol, perp }) {
+  const [side, setSide] = useState('buy');
+  const [size, setSize] = useState(0.01);
+  const [leverage, setLeverage] = useState(10);
+  const [orderType, setOrderType] = useState('market');
+  const [price, setPrice] = useState(perp?.mark_price || 0);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const placeOrder = async () => {
+    setLoading(true);
+    setMsg(null);
+    try {
+      const r = await fetch(`${API}/delta/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({
+          symbol, side, size: String(size), order_type: orderType,
+          limit_price: orderType === 'limit' ? String(price) : undefined,
+          leverage: String(leverage)
+        })
+      });
+      const d = await r.json();
+      if (r.ok && d.id) {
+        setMsg({ type: 'success', text: `Order placed: ${side.toUpperCase()} ${size} ${symbol} @ ${orderType === 'market' ? 'market' : price}` });
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.ping();
+      } else {
+        setMsg({ type: 'error', text: d.error || 'Order failed' });
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+      }
+    } catch (e) {
+      setMsg({ type: 'error', text: e.message });
+      if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+    }
+    setLoading(false);
+  };
+
+  const notional = size * (perp?.mark_price || 0);
+
+  return React.createElement(Section, { title: 'Quick Trade' },
+    React.createElement(Card, { pad: 14 },
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 12 } },
+        React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Side'),
+          React.createElement('div', { style: { display: 'flex', gap: 8 } },
+            ['buy', 'sell'].map(s => React.createElement('button', {
+              key: s,
+              onClick: () => setSide(s),
+              style: { flex: 1, padding: '8px', borderRadius: 6, border: `1px solid ${side === s ? COLORS[side === 'buy' ? 'green' : 'red'] : COLORS.border}`, background: side === s ? COLORS[side === 'buy' ? 'green' : 'red'] + '22' : 'transparent', color: side === s ? COLORS[side === 'buy' ? 'green' : 'red'] : COLORS.textSecondary, fontWeight: 700, cursor: 'pointer' }
+            }, s.toUpperCase()))
+          )
+        ),
+        React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Size (contracts)'),
+          React.createElement('input', { type: 'number', step: '0.001', min: '0.001', value: size, onChange: (e) => setSize(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } })
+        ),
+        React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Leverage'),
+          React.createElement('select', { value: leverage, onChange: (e) => setLeverage(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } },
+            [1, 2, 5, 10, 20, 50, 100].map(l => React.createElement('option', { key: l, value: l }, l + 'x'))
+          )
+        ),
+        React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Order Type'),
+          React.createElement('select', { value: orderType, onChange: (e) => setOrderType(e.target.value), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } },
+            React.createElement('option', { value: 'market' }, 'Market'),
+            React.createElement('option', { value: 'limit' }, 'Limit')
+          )
+        ),
+        orderType === 'limit' && React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Limit Price'),
+          React.createElement('input', { type: 'number', step: '0.01', min: '0', value: price, onChange: (e) => setPrice(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } })
+        ),
+        React.createElement('div', null,
+          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Est. Notional'),
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, '$' + notional.toLocaleString(undefined, { maximumFractionDigits: 2 }))
+        )
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: 8 } },
+        React.createElement('button', {
+          onClick: placeOrder,
+          disabled: loading,
+          style: { flex: 1, padding: '12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', background: side === 'buy' ? COLORS.green : COLORS.red, color: '#000', opacity: loading ? 0.6 : 1 }
+        }, loading ? 'Placing...' : side.toUpperCase() + ' ' + size + ' ' + symbol.replace('USD', '')),
+        React.createElement('button', {
+          onClick: () => { setSize(0.01); setLeverage(10); setOrderType('market'); setMsg(null); },
+          style: { padding: '12px 20px', borderRadius: 8, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }
+        }, 'Reset')
+      ),
+      msg && React.createElement('div', { style: { marginTop: 10, padding: '8px 12px', borderRadius: 6, background: msg.type === 'success' ? COLORS.green + '22' : COLORS.red + '22', border: `1px solid ${msg.type === 'success' ? COLORS.green : COLORS.red}`, color: msg.type === 'success' ? COLORS.green : COLORS.red, fontSize: 12 } }, msg.text)
+    )
+  );
+}
+
+
 /* ============================ DASHBOARD VIEW ============================ */
 function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }) {
   const E = window.Theme && window.Theme.EXTRA || {};
@@ -1355,7 +1519,7 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
       )
     ),
     React.createElement(Section, { title: 'Trending Perpetuals', right: React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'sorted by 24h change') },
-      React.createElement(TrendingPairs, { limit: 12 })
+      React.createElement(TrendingPairs, { limit: 12, onSelect: (sym) => { setChartSymbol(sym); setChartSource('tradingview'); } })
     ),
     React.createElement(Section, { title: 'Asset Chart', right: React.createElement('div', { style: { display: 'flex', gap: 4 } },
         React.createElement(Tab, { small: true, active: chartSource === 'delta', onClick: () => setChartSource('delta') }, 'Delta'),
@@ -1378,13 +1542,14 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
         chartSource === 'tradingview'
           ? React.createElement(TradingViewWidget, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
           : React.createElement(PriceChart, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
-      )
+      ),
+      React.createElement(PairMetricsPanel, { symbol: chartSymbol, timeframe: chartTf, health })
     )
   );
 }
 
 /* ============================ TRENDING PERPETUALS ============================ */
-function TrendingPairs({ limit }) {
+function TrendingPairs({ limit, onSelect }) {
   var E = window.Theme && window.Theme.EXTRA || {};
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
@@ -1425,8 +1590,7 @@ function TrendingPairs({ limit }) {
           style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' },
           onClick: () => {
             const sym = x.symbol.replace('USD', '');
-            const tvSymbol = sym === 'XAUT' ? 'XAUTUSDT' : sym + 'USDT';
-            window.open('https://www.tradingview.com/chart/?symbol=' + tvSymbol, '_blank');
+            if (onSelect) onSelect(sym);
           }
         },
           React.createElement('span', { style: { width: 18, textAlign: 'right', fontFamily: E.fontMono || 'inherit', fontSize: 10, color: COLORS.textTertiary } }, i + 1),
@@ -2065,8 +2229,190 @@ function NotificationRuleCard({ r, onSave, onDelete }) {
   );
 }
 
+/* ============================ SETTINGS VIEW ============================ */
+function SettingsView({ health }) {
+  const [deltaKey, setDeltaKey] = useState('');
+  const [deltaSecret, setDeltaSecret] = useState('');
+  const [testnet, setTestnet] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  useEffect(() => {
+    try {
+      const k = localStorage.getItem('delta_api_key');
+      const s = localStorage.getItem('delta_api_secret');
+      const t = localStorage.getItem('delta_testnet');
+      if (k) setDeltaKey(k);
+      if (s) setDeltaSecret(s);
+      if (t) setTestnet(t === 'true');
+    } catch (e) {}
+  }, []);
+
+  const saveKeys = () => {
+    try {
+      localStorage.setItem('delta_api_key', deltaKey);
+      localStorage.setItem('delta_api_secret', deltaSecret);
+      localStorage.setItem('delta_testnet', testnet.toString());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {}
+  };
+
+  const clearKeys = () => {
+    setDeltaKey('');
+    setDeltaSecret('');
+    setTestnet(false);
+    try {
+      localStorage.removeItem('delta_api_key');
+      localStorage.removeItem('delta_api_secret');
+      localStorage.removeItem('delta_testnet');
+    } catch (e) {}
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const testConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await fetch(`${API}/delta/health`, {
+        headers: {
+          'Authorization': 'Bearer ' + BRIDGE_TOKEN,
+          'X-Delta-Key': deltaKey,
+          'X-Delta-Secret': deltaSecret,
+          'X-Delta-Testnet': testnet.toString()
+        }
+      });
+      const d = await r.json();
+      if (r.ok && d.connected) {
+        setTestResult({ type: 'success', text: 'Connection successful! ' + (d.has_auth ? 'API keys valid.' : 'Connected (read-only).') });
+      } else {
+        setTestResult({ type: 'error', text: d.error || 'Connection failed' });
+      }
+    } catch (e) {
+      setTestResult({ type: 'error', text: e.message });
+    }
+    setTesting(false);
+  };
+
+  const hasAuth = health?.has_auth;
+  const apiConfigured = !!deltaKey && !!deltaSecret;
+
+  return React.createElement('div', { style: { maxWidth: 800, margin: '0 auto' } },
+    React.createElement(Section, { title: 'API Configuration' },
+      React.createElement(Card, { pad: 16 },
+        React.createElement('div', { style: { display: 'grid', gap: 16, maxWidth: 500 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 8, background: hasAuth ? COLORS.green + '15' : COLORS.amber + '15', border: `1px solid ${hasAuth ? COLORS.green : COLORS.amber}` } },
+            React.createElement('span', { style: { width: 10, height: 10, borderRadius: '50%', background: hasAuth ? COLORS.green : COLORS.amber } }),
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 700, color: COLORS.text } }, hasAuth ? 'Delta API Connected' : 'Delta API Not Connected'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, hasAuth ? 'Trading enabled with stored credentials' : 'Add API keys to enable trading')
+            )
+          ),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary, marginBottom: 8 } }, 'Enter your Delta Exchange API credentials. Keys are stored locally in your browser and sent with each trading request.'),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 12 } }, 'Get keys at: https://www.delta.exchange/app/api-management'),
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+            React.createElement('div', null,
+              React.createElement('label', { style: { display: 'block', fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'API Key'),
+              React.createElement('input', { type: 'password', value: deltaKey, onChange: (e) => setDeltaKey(e.target.value), placeholder: 'Enter API Key', style: { width: '100%', padding: '10px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: 'JetBrains Mono, monospace' } })
+            ),
+            React.createElement('div', null,
+              React.createElement('label', { style: { display: 'block', fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'API Secret'),
+              React.createElement('input', { type: 'password', value: deltaSecret, onChange: (e) => setDeltaSecret(e.target.value), placeholder: 'Enter API Secret', style: { width: '100%', padding: '10px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: 'JetBrains Mono, monospace' } })
+            ),
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+              React.createElement('input', { type: 'checkbox', checked: testnet, onChange: (e) => setTestnet(e.target.checked), style: { width: 18, height: 18, accentColor: COLORS.blue } }),
+              React.createElement('label', { style: { fontSize: 12, color: COLORS.text } }, 'Testnet (Delta Testnet)')
+            )
+          ),
+          React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 8 } },
+            React.createElement('button', { onClick: saveKeys, style: { padding: '10px 16px', borderRadius: 8, background: COLORS.blue, border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer' } }, saved ? 'Saved!' : 'Save Keys'),
+            React.createElement('button', { onClick: clearKeys, style: { padding: '10px 16px', borderRadius: 8, background: 'transparent', border: `1px solid ${COLORS.red}`, color: COLORS.red, fontWeight: 700, cursor: 'pointer' } }, 'Clear Keys'),
+            React.createElement('button', { onClick: testConnection, disabled: testing || !deltaKey || !deltaSecret, style: { padding: '10px 16px', borderRadius: 8, background: testing ? 'transparent' : COLORS.green, border: `1px solid ${testing ? COLORS.border : COLORS.green}`, color: testing ? COLORS.textSecondary : '#000', fontWeight: 700, cursor: testing ? 'not-allowed' : 'pointer' } }, testing ? 'Testing...' : 'Test Connection')
+          ),
+          testResult && React.createElement('div', { style: { marginTop: 12, padding: '10px 12px', borderRadius: 6, background: testResult.type === 'success' ? COLORS.green + '22' : COLORS.red + '22', border: `1px solid ${testResult.type === 'success' ? COLORS.green : COLORS.red}`, color: testResult.type === 'success' ? COLORS.green : COLORS.red, fontSize: 12 } }, testResult.text)
+        )
+      )
+    ),
+    React.createElement(Section, { title: 'Trading Preferences' },
+      React.createElement(Card, { pad: 16 },
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Default Leverage'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Leverage applied when opening quick trades')
+            ),
+            React.createElement('select', { defaultValue: '10', style: { width: 120, padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text } },
+              [1, 2, 5, 10, 20, 50].map(l => React.createElement('option', { key: l, value: l }, l + 'x'))
+            )
+          ),
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Default Order Type'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Market or Limit for quick trade panel')
+            ),
+            React.createElement('select', { defaultValue: 'market', style: { width: 120, padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text } },
+              React.createElement('option', { value: 'market' }, 'Market'),
+              React.createElement('option', { value: 'limit' }, 'Limit')
+            )
+          ),
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Confirm Before Trade'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Show confirmation dialog before placing orders')
+            ),
+            React.createElement('input', { type: 'checkbox', defaultChecked: true, style: { width: 18, height: 18, accentColor: COLORS.blue } })
+          )
+        )
+      )
+    ),
+    React.createElement(Section, { title: 'UI Preferences' },
+      React.createElement(Card, { pad: 16 },
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Sound Effects'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Audio feedback for trades, alerts, bot actions')
+            ),
+            React.createElement('input', { type: 'checkbox', defaultChecked: true, onChange: (e) => { if (window.Chrome && window.Chrome.audio) window.Chrome.audio.setMuted(!e.target.checked); }, style: { width: 18, height: 18, accentColor: COLORS.blue } })
+          ),
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Scanline Effect'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'CRT scanline overlay on the UI')
+            ),
+            React.createElement('input', { type: 'checkbox', defaultChecked: true, style: { width: 18, height: 18, accentColor: COLORS.blue } })
+          ),
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Particle Field'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Animated background particles')
+            ),
+            React.createElement('input', { type: 'checkbox', defaultChecked: true, style: { width: 18, height: 18, accentColor: COLORS.blue } })
+          ),
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600, color: COLORS.text } }, 'Tilt Effect'),
+              React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Subtle 3D tilt on cards on mouse move')
+            ),
+            React.createElement('input', { type: 'checkbox', defaultChecked: true, style: { width: 18, height: 18, accentColor: COLORS.blue } })
+          )
+        )
+      )
+    ),
+    React.createElement(Section, { title: 'Data & Cache' },
+      React.createElement(Card, { pad: 16 },
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+          React.createElement('button', { onClick: () => { try { localStorage.clear(); setDeltaKey(''); setDeltaSecret(''); setTestnet(false); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (e) {} }, style: { padding: '10px 16px', borderRadius: 8, background: COLORS.red + '22', border: `1px solid ${COLORS.red}`, color: COLORS.red, fontWeight: 700, cursor: 'pointer', width: 'fit-content' } }, 'Clear All Local Storage')
+        )
+      )
+    )
+  );
+}
+
 /* ============================ MAIN APP ============================ */
-function SlimBanner() {
+function SlimBanner({ onSelect }) {
   const [data, setData] = useState(null);
   useEffect(() => {
     const load = async () => {
@@ -2098,9 +2444,11 @@ function SlimBanner() {
     },
       data.map((a, i) => React.createElement('span', {
         key: a.symbol,
+        onClick: () => onSelect && onSelect(a.symbol),
         style: {
           display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 20px',
-          color: a.change_pct >= 0 ? COLORS.green : COLORS.red
+          color: a.change_pct >= 0 ? COLORS.green : COLORS.red,
+          cursor: onSelect ? 'pointer' : 'default'
         }
       },
         React.createElement('span', { style: { fontSize: 14 } }, a.emoji),
@@ -2223,10 +2571,11 @@ function App() {
     { id: 'journal', label: 'Journal' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'terminal', label: 'TERM' },
+    { id: 'settings', label: 'Settings' },
   ];
 
   return React.createElement('div', { style: { minHeight: '100vh', background: COLORS.bgRoot, color: COLORS.text } },
-    React.createElement(SlimBanner, null),
+    React.createElement(SlimBanner, { onSelect: (sym) => { setChartSymbol(sym); setChartSource('tradingview'); setTab('dashboard'); } }),
     React.createElement('header', { style: { position: 'sticky', top: 24, zIndex: 50, background: 'rgba(10,11,15,0.95)', borderBottom: `1px solid ${COLORS.border}`, padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(8px)' } },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
         React.createElement('div', { style: { width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#4e8cff,#9b59b6)' } }),
@@ -2260,6 +2609,7 @@ function App() {
       tab === 'journal' && React.createElement(JournalView, null),
       tab === 'analytics' && React.createElement(AnalyticsView, null),
       tab === 'terminal' && React.createElement(window.TerminalView, { pendingCmd: pendingTermRef.current }),
+      tab === 'settings' && React.createElement(SettingsView, { health }),
     )
   );
 }
