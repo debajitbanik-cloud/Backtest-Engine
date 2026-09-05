@@ -648,8 +648,8 @@ class DeltaAPIClient:
             lev = int(leverage)
         except (TypeError, ValueError):
             return {"error": "invalid_leverage", "message": "Leverage must be an integer"}
-        if lev < 1 or lev > 200:
-            return {"error": "invalid_leverage", "message": "Leverage must be between 1 and 200"}
+        if lev < 1 or lev > 125:
+            return {"error": "invalid_leverage", "message": "Leverage must be between 1 and 125"}
         return await self._post(f"/v2/products/{int(product_id)}/orders/leverage", {"leverage": lev})
 
     async def place_order(self, symbol: str, side: str, size: int,

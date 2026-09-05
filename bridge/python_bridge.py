@@ -1189,11 +1189,12 @@ class PythonBridge:
             return web.json_response({'error': 'Invalid side. Use buy or sell'}, status=400)
 
         try:
-            size = int(float(body.get('size')))
+            size_f = float(body.get('size'))
         except (TypeError, ValueError):
-            return web.json_response({'error': 'Invalid size. Use an integer number of contracts'}, status=400)
-        if size < 1 or size > 100000:
-            return web.json_response({'error': 'Invalid size. Must be 1..100000 contracts'}, status=400)
+            return web.json_response({'error': 'Invalid size. Use a whole number of contracts'}, status=400)
+        if not size_f.is_integer() or size_f < 1 or size_f > 100000:
+            return web.json_response({'error': 'Invalid size. Must be a whole number of contracts, 1..100000'}, status=400)
+        size = int(size_f)
 
         otype = str(body.get('order_type') or body.get('type') or 'market').lower()
         if otype in ('market', 'market_order'):
