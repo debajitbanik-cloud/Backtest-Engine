@@ -1448,7 +1448,7 @@ function FlowSymbolHeader({ symbol }) {
 function FlowTicket({ symbol, health }) {
   const [lev, setLev] = useState(100);
   const [otype, setOtype] = useState('market');
-  const [size, setSize] = useState(0.01);
+  const [size, setSize] = useState(1);
   const [limitPx, setLimitPx] = useState(0);
   const [tick, setTick] = useState(null);
   const [avail, setAvail] = useState(null);
@@ -1485,11 +1485,15 @@ function FlowTicket({ symbol, health }) {
       if (otype === 'limit') body.limit_price = String(limitPx || px);
       const r = await fetch(`${API}/delta/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN }, body: JSON.stringify(body) });
       const d = await r.json();
-      if (r.ok && (d.id || d.order_id || d.status === 'ok')) {
-        setMsg({ ok: true, text: `${side === 'buy' ? 'Long' : 'Short'} ${size} @ ${otype === 'market' ? 'market' : (limitPx || px)} placed` });
+      if (d && d.success && d.order) {
+        const o = d.order;
+        setMsg({ ok: true, text: `${side === 'buy' ? 'Long' : 'Short'} ${o.size ?? size} ${o.product_symbol || ''} ${o.state || 'placed'} · id ${o.id ?? '--'}` });
         if (window.Chrome && window.Chrome.audio) window.Chrome.audio.ping();
+      } else if (r.status === 403 || (d && d.error === 'read_only')) {
+        setMsg({ ok: false, text: 'Trading mode is OFF — arm it with the ▲ TRADING pill in the top bar first.' });
+        if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
       } else {
-        setMsg({ ok: false, text: (d && d.error) || 'Order rejected' });
+        setMsg({ ok: false, text: (d && (d.message || d.error)) || 'Order rejected' });
         if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
       }
     } catch (e) {
@@ -1516,7 +1520,13 @@ function FlowTicket({ symbol, health }) {
   };
   const notional = size * px;
   const liqLong = px ? px * (1 - 1 / lev) : 0;
-  const pctBtn = (f) => { if (avail != null && px) setSize(Number(((avail * f) / px).toFixed(4))); };
+  const pctBtn = (f) => {
+    if (avail != null && px) {
+      const q = Math.floor((avail * f) / px);
+      if (q < 1) { setMsg({ ok: false, text: 'Available covers < 1 contract at this price.' }); return; }
+      setSize(q);
+    }
+  };
   const execBtn = (side) => {
     const isBuy = side === 'buy';
     return React.createElement('button', { onClick: () => place(isBuy ? 'buy' : 'sell'), disabled: busy || noAuth,
@@ -1549,9 +1559,9 @@ function FlowTicket({ symbol, health }) {
       React.createElement('span', { style: { fontFamily: "'Fira Code', monospace", color: COLORS.text } }, avail != null ? avail.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' USDT' : '--')
     ),
     React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 8 } },
-      React.createElement('input', { type: 'number', step: '0.0001', min: '0', value: size, onChange: (e) => setSize(Number(e.target.value)),
+      React.createElement('input', { type: 'number', step: '1', min: '1', value: size, onChange: (e) => setSize(Math.max(1, Math.floor(Number(e.target.value) || 1))),
         style: { flex: 1, padding: '8px 10px', borderRadius: 7, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: "'Fira Code', monospace" } }),
-      React.createElement('span', { style: { alignSelf: 'center', fontSize: 11, color: COLORS.textTertiary } }, 'USDT')
+      React.createElement('span', { style: { alignSelf: 'center', fontSize: 10, color: COLORS.textTertiary } }, 'contracts')
     ),
     otype === 'limit' && React.createElement('input', { type: 'number', step: '0.1', min: '0', value: limitPx || '', placeholder: 'Limit price', onChange: (e) => setLimitPx(Number(e.target.value)),
       style: { width: '100%', padding: '8px 10px', borderRadius: 7, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: "'Fira Code', monospace", marginBottom: 8 } }),

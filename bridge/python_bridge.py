@@ -156,6 +156,7 @@ class PythonBridge:
         self.app.router.add_get('/delta/candles', self.delta_candles)
         self.app.router.add_post('/delta/mode', self.delta_set_mode)
         self.app.router.add_post('/delta/credentials', self.delta_set_credentials)
+        self.app.router.add_post('/delta/orders', self.delta_place_order)
         self.app.router.add_get('/strategy/deployed', self.strategy_deployed)
         self.app.router.add_get('/ccxt/health', self.ccxt_health)
         self.app.router.add_get('/ccxt/markets', self.ccxt_markets)
@@ -1160,6 +1161,94 @@ class PythonBridge:
             return web.json_response({'status': 'ok', 'mode': delta_client.mode})
         except Exception as e:
             return web.json_response({'error': str(e)}, status=500)
+
+    async def delta_place_order(self, request: web.Request) -> web.Response:
+        """Place a live order on Delta. Armed ONLY in TRADING mode; bridge-auth required.
+
+        Body: { symbol ("BTCUSD"), side ("buy"|"sell"), size (int contracts, 1..100000),
+                order_type ("market"|"limit"), limit_price (required for limit),
+                leverage (optional int 1..125, applied first — aborts if rejected) }
+        """
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        try:
+            body = await request.json()
+        except Exception:
+            return web.json_response({'error': 'Invalid JSON body'}, status=400)
+        if not isinstance(body, dict):
+            return web.json_response({'error': 'Invalid JSON body'}, status=400)
+
+        raw_sym = str(body.get('symbol') or '').upper().strip()
+        if raw_sym.endswith('USDT') and len(raw_sym) > 4:
+            raw_sym = raw_sym[:-4] + 'USD'
+        if not _validate_symbol(raw_sym):
+            return web.json_response({'error': 'Invalid symbol. Use a Delta product symbol like BTCUSD'}, status=400)
+
+        side = str(body.get('side') or '').lower()
+        if side not in ('buy', 'sell'):
+            return web.json_response({'error': 'Invalid side. Use buy or sell'}, status=400)
+
+        try:
+            size = int(float(body.get('size')))
+        except (TypeError, ValueError):
+            return web.json_response({'error': 'Invalid size. Use an integer number of contracts'}, status=400)
+        if size < 1 or size > 100000:
+            return web.json_response({'error': 'Invalid size. Must be 1..100000 contracts'}, status=400)
+
+        otype = str(body.get('order_type') or body.get('type') or 'market').lower()
+        if otype in ('market', 'market_order'):
+            otype = 'market_order'
+            limit_px = None
+        elif otype in ('limit', 'limit_order'):
+            otype = 'limit_order'
+            try:
+                limit_px = float(body.get('limit_price'))
+            except (TypeError, ValueError):
+                return web.json_response({'error': 'limit_price is required for limit orders'}, status=400)
+            if limit_px <= 0:
+                return web.json_response({'error': 'limit_price must be positive'}, status=400)
+        else:
+            return web.json_response({'error': 'Invalid order_type. Use market or limit'}, status=400)
+
+        leverage = body.get('leverage')
+        if leverage is not None:
+            try:
+                leverage = int(leverage)
+            except (TypeError, ValueError):
+                return web.json_response({'error': 'Invalid leverage. Use an integer 1..125'}, status=400)
+            if leverage < 1 or leverage > 125:
+                return web.json_response({'error': 'Invalid leverage. Use an integer 1..125'}, status=400)
+
+        if delta_client.mode != DeltaAPIMode.TRADING:
+            return web.json_response(
+                {'error': 'read_only',
+                 'message': 'Trading mode is OFF. Arm it with POST /delta/mode {"mode": "trading"} first.'},
+                status=403)
+
+        try:
+            res = await delta_client.place_order(
+                symbol=raw_sym, side=side, size=size, order_type=otype,
+                limit_price=str(limit_px) if limit_px is not None else None,
+                leverage=leverage)
+        except Exception as e:
+            return web.json_response({'error': 'order_failed', 'message': str(e)}, status=502)
+
+        if not isinstance(res, dict):
+            return web.json_response({'error': 'order_failed', 'message': 'Empty exchange response'}, status=502)
+        if res.get('success') is True:
+            order = res.get('result') or {}
+            print(f"[orders] placed {side} {size}x{raw_sym} {otype} id={order.get('id')} lev={res.get('leverage_applied')}")
+            return web.json_response({'success': True, 'order': order,
+                                      'leverage_applied': res.get('leverage_applied'),
+                                      'mode': str(delta_client.mode)})
+        err = res.get('error') or 'order_rejected'
+        if err in ('read_only', 'no_auth'):
+            return web.json_response({'error': err, 'message': res.get('message')}, status=403)
+        if err in ('unknown_symbol', 'invalid_leverage', 'leverage_rejected'):
+            return web.json_response({'error': err, 'message': res.get('message'), 'detail': res.get('detail')}, status=400)
+        return web.json_response({'success': False, 'error': err,
+                                  'message': (res.get('error') or {}).get('message') if isinstance(res.get('error'), dict) else res.get('message'),
+                                  'detail': res.get('detail') or res}, status=502)
 
     async def delta_set_credentials(self, request: web.Request) -> web.Response:
         """Set Delta API credentials IN MEMORY (no disk persistence by default) and test the connection.

@@ -379,18 +379,23 @@ class DeltaAPIClient:
             return await resp.json()
     
     async def _post(self, path: str, body: Dict = None) -> Dict:
-        """POST request with auth."""
+        """POST request with auth. Returns the raw envelope; business errors
+        arrive as 200 + {"success": false, ...}, transport errors as {"error": ...}."""
         await self._rate_limit()
         session = await self._ensure_session()
-        
+
         body_str = json.dumps(body) if body else ""
         headers = self._auth_headers("POST", path, body=body_str)
-        
+
         async with session.post(f"{self.rest_base}{path}", headers=headers, data=body_str) as resp:
             if resp.status == 401:
                 return {"error": "unauthorized"}
             if resp.status != 200:
-                return {"error": f"http_{resp.status}"}
+                try:
+                    detail = await resp.text()
+                except Exception:
+                    detail = ""
+                return {"error": f"http_{resp.status}", "detail": detail[:500]}
             return await resp.json()
     
     async def health_check(self) -> Dict:
@@ -617,8 +622,73 @@ class DeltaAPIClient:
         data = await self._get("/v2/orders", authenticated=True)
         if "error" in data:
             return []
-        
+
         return data.get("result", [])
+
+    async def resolve_product_id(self, symbol: str) -> Optional[int]:
+        """Resolve a product symbol (e.g. BTCUSD) to its integer product id (public)."""
+        try:
+            data = await self._get(f"/v2/products/{symbol}")
+            if isinstance(data, dict):
+                res = data.get("result") or {}
+                pid = res.get("id")
+                if isinstance(pid, int):
+                    return pid
+        except Exception:
+            pass
+        return None
+
+    async def set_order_leverage(self, product_id: int, leverage: int) -> Dict:
+        """Set order leverage for a product. Requires trading mode + auth."""
+        if self.credentials.mode != DeltaAPIMode.TRADING:
+            return {"error": "read_only", "message": "Switch to TRADING mode to change leverage"}
+        if not self.credentials.has_auth:
+            return {"error": "no_auth", "message": "Delta API keys are not configured"}
+        try:
+            lev = int(leverage)
+        except (TypeError, ValueError):
+            return {"error": "invalid_leverage", "message": "Leverage must be an integer"}
+        if lev < 1 or lev > 200:
+            return {"error": "invalid_leverage", "message": "Leverage must be between 1 and 200"}
+        return await self._post(f"/v2/products/{int(product_id)}/orders/leverage", {"leverage": lev})
+
+    async def place_order(self, symbol: str, side: str, size: int,
+                          order_type: str = "market_order",
+                          limit_price: str = None,
+                          leverage: int = None) -> Dict:
+        """Place a live order. Requires trading mode + auth.
+
+        Leverage is applied first via the per-product leverage endpoint;
+        if that call is rejected the order is NOT placed.
+        """
+        if self.credentials.mode != DeltaAPIMode.TRADING:
+            return {"error": "read_only", "message": "Switch to TRADING mode to place orders"}
+        if not self.credentials.has_auth:
+            return {"error": "no_auth", "message": "Delta API keys are not configured"}
+        pid = await self.resolve_product_id(symbol)
+        if pid is None:
+            return {"error": "unknown_symbol", "message": f"Could not resolve product id for {symbol}"}
+        lev_applied = None
+        if leverage is not None:
+            lev_res = await self.set_order_leverage(pid, leverage)
+            if isinstance(lev_res, dict) and lev_res.get("success") is True:
+                lev_applied = (lev_res.get("result") or {}).get("leverage", leverage)
+            else:
+                out = {"error": "leverage_rejected",
+                       "message": "Leverage change rejected; order NOT placed",
+                       "leverage_applied": None}
+                if isinstance(lev_res, dict):
+                    out["detail"] = lev_res
+                return out
+        body = {"product_id": pid, "product_symbol": symbol, "size": size,
+                "side": side, "order_type": order_type, "time_in_force": "gtc"}
+        if order_type == "limit_order":
+            body["limit_price"] = str(limit_price)
+        res = await self._post("/v2/orders", body)
+        if isinstance(res, dict):
+            res = dict(res)
+            res["leverage_applied"] = lev_applied
+        return res
     
     async def close(self) -> None:
         """Close session."""
