@@ -1,9 +1,9 @@
 /* theme.js — loads first; attaches window.Theme */
 window.Theme = window.Theme || {};
 window.Theme.EXTRA = {
-  fontDisplay: "'Space Grotesk', -apple-system, sans-serif",
-  fontMono:    "'JetBrains Mono', ui-monospace, monospace",
-  fontBody:    "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  fontDisplay: "'Fira Sans', -apple-system, sans-serif",
+  fontMono:    "'Fira Code', ui-monospace, monospace",
+  fontBody:    "'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
   lime:        '#bef264',
   limeDim:     '#bef26444',
   limeMid:     '#bef26488',
@@ -18,6 +18,6 @@ window.Theme.EXTRA = {
   particleMaxDist: 150,
   streamDuration:  24,
   tiltMaxDeg:      8,
-  bgRoot:  '#0a0b0f',
-  bgSurface: '#111318',
+  bgRoot:  '#020617',
+  bgSurface: '#0E1223',
 };

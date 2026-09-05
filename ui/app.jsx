@@ -3,9 +3,9 @@ const API = 'http://127.0.0.1:8088';
 const BRIDGE_TOKEN = '8G8VGUXx1sjVEmK7Y2fqs0VF6wcukOXSXwI6dVv24WY';
 
 const COLORS = {
-  bgRoot: '#0a0b0f', bgSurface: '#111318', bgElevated: '#161820', bgHover: '#1c1e26',
-  border: '#22242c', borderActive: '#333540', text: '#e4e6ef', textSecondary: '#8b8fa3',
-  textTertiary: '#5a5e6f', blue: '#4e8cff', green: '#2ecc71', red: '#e74c3c',
+  bgRoot: '#020617', bgSurface: '#0E1223', bgElevated: '#1A1E2F', bgHover: '#232842',
+  border: '#334155', borderActive: '#475569', text: '#F8FAFC', textSecondary: '#94A3B8',
+  textTertiary: '#64748B', blue: '#4e8cff', green: '#22C55E', red: '#EF4444',
   amber: '#f0a500', purple: '#9b59b6', cyan: '#00c8e8',
 };
 
@@ -457,13 +457,13 @@ function PriceChart({ symbol, timeframe, height }) {
       const LC = window.LightweightCharts;
       const chart = LC.createChart(containerRef.current, {
         width: containerRef.current.clientWidth, height: height || 380,
-        layout: { background: { color: '#0a0b0f' }, textColor: '#e4e6ef' },
-        grid: { vertLines: { color: '#22242c' }, horzLines: { color: '#22242c' } },
+        layout: { background: { color: '#020617' }, textColor: '#F8FAFC' },
+        grid: { vertLines: { color: '#334155' }, horzLines: { color: '#334155' } },
         crosshair: { mode: LC.CrosshairMode.Normal },
-        rightPriceScale: { borderColor: '#22242c' },
-        timeScale: { borderColor: '#22242c', timeVisible: true, secondsVisible: false },
+        rightPriceScale: { borderColor: '#334155' },
+        timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
       });
-      const series = chart.addCandlestickSeries({ upColor: '#2ecc71', downColor: '#e74c3c', borderUpColor: '#2ecc71', borderDownColor: '#e74c3c', wickUpColor: '#2ecc71', wickDownColor: '#e74c3c' });
+      const series = chart.addCandlestickSeries({ upColor: '#22C55E', downColor: '#EF4444', borderUpColor: '#22C55E', borderDownColor: '#EF4444', wickUpColor: '#22C55E', wickDownColor: '#EF4444' });
       chartRef.current = { chart, series };
       setLoaded(true);
       const now = Math.floor(Date.now() / 1000);
@@ -479,7 +479,7 @@ function PriceChart({ symbol, timeframe, height }) {
     React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 8 } },
       ['1m', '5m', '15m', '1h', '4h', '1d'].map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t))
     ),
-    React.createElement('div', { ref: containerRef, style: { width: '100%', height: height || 380, background: '#0a0b0f', borderRadius: 8 } },
+    React.createElement('div', { ref: containerRef, style: { width: '100%', height: height || 380, background: '#020617', borderRadius: 8 } },
       !loaded && React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: COLORS.textTertiary } }, 'Loading chart...')
     )
   );
@@ -1298,308 +1298,663 @@ function BotsView() {
 }
 
 const CAT_COLOR = {
-  price: '#4e8cff', momentum: '#2ecc71', volatility: '#f0a500', volume: '#00c8e8',
-  microstructure: '#9b59b6', derivatives: '#e74c3c', cross_asset: '#e91e63', time: '#8b8fa3',
+  price: '#4e8cff', momentum: '#22C55E', volatility: '#f0a500', volume: '#00c8e8',
+  microstructure: '#9b59b6', derivatives: '#EF4444', cross_asset: '#e91e63', time: '#8b8fa3',
   regime: '#ff9800',
 };
 
 
-/* ============================ PAIR METRICS PANEL ============================ */
-function PairMetricsPanel({ symbol, timeframe, health }) {
-  const [metrics, setMetrics] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
+/* ============================ MT5 FLOW TERMINAL ============================ */
+const FLOW_RAIL = [
+  { id: 'dashboard', label: 'DASHBOARD', icon: 'layout-dashboard' },
+  { id: 'bots', label: 'BOTS', icon: 'bot' },
+  { id: 'options', label: 'OPTIONS', icon: 'candlestick-chart' },
+  { id: 'strategies', label: 'STRATEGIES', icon: 'layers' },
+  { id: 'calendar', label: 'CALENDAR', icon: 'calendar' },
+  { id: 'library', label: 'LIBRARY', icon: 'library' },
+  { id: 'journal', label: 'JOURNAL', icon: 'notebook-pen' },
+  { id: 'analytics', label: 'ANALYTICS', icon: 'bar-chart-3' },
+  { id: 'terminal', label: 'TERM', icon: 'terminal' },
+  { id: 'settings', label: 'SETTINGS', icon: 'settings' },
+];
 
+function FlowRail({ active, onNav }) {
+  useEffect(() => { try { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); } catch (e) {} });
+  return React.createElement('nav', { 'aria-label': 'Terminal sections', style: { display: 'flex', flexDirection: 'column', gap: 2, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '10px 6px', alignSelf: 'start', position: 'sticky', top: 96 } },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 } },
+      React.createElement('div', { style: { width: 0, height: 0, borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderBottom: '14px solid ' + COLORS.blue } })
+    ),
+    FLOW_RAIL.map(t => React.createElement('button', { key: t.id, onClick: () => onNav && onNav(t.id), title: t.label,
+      style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 2px', borderRadius: 8, border: 'none', cursor: 'pointer',
+        background: active === t.id ? COLORS.blue + '22' : 'transparent',
+        boxShadow: active === t.id ? `inset 2px 0 0 ${COLORS.blue}` : 'none',
+        color: active === t.id ? COLORS.text : COLORS.textTertiary } },
+      React.createElement('i', { 'data-lucide': t.icon, style: { width: 18, height: 18 } }),
+      React.createElement('span', { style: { fontSize: 8, fontWeight: 700, letterSpacing: 0.4 } }, t.label)))
+  );
+}
+
+function FlowTopbar({ health, search, setSearch, onSearch, onModeToggle, modeBusy }) {
+  const [bal, setBal] = useState(null);
   useEffect(() => {
     const load = async () => {
-      setLoading(true);
-      setErr(null);
       try {
-        const [tickerRes, regimeRes] = await Promise.all([
-          fetch(`${API}/delta/tickers`),
-          fetch(`${API}/analytics/regime?asset=${symbol}&timeframe=${timeframe}`)
-        ]);
-        const [tickerData, regimeData] = await Promise.all([tickerRes.json(), regimeRes.json()]);
-        
-        const tickers = tickerData.tickers || [];
-        const perp = tickers.find(t => t && t.symbol === `${symbol}USD` || t.symbol === `${symbol}USDT`);
-        
-        setMetrics({ perp, regime: regimeData });
-      } catch (e) { setErr(String(e)); }
-      setLoading(false);
+        const r = await fetch(`${API}/delta/balance`);
+        const d = await r.json();
+        if (d && !d.error) setBal(d);
+      } catch (e) {}
     };
     load();
     const iv = setInterval(load, 15000);
     return () => clearInterval(iv);
-  }, [symbol, timeframe]);
+  }, []);
+  const pick = (o, ks) => { if (!o) return null; for (let i = 0; i < ks.length; i++) { if (o[ks[i]] != null && !isNaN(Number(o[ks[i]]))) return Number(o[ks[i]]); } return null; };
+  const balance = pick(bal, ['balance', 'wallet_balance', 'total', 'available']) ;
+  const equity = pick(bal, ['equity', 'total_equity']) ?? balance;
+  const upnl = pick(bal, ['unrealized_pnl', 'unrealizedPnl', 'upnl', 'pnl']);
+  return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 12, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '10px 14px', flexWrap: 'wrap' } },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+      React.createElement('div', { style: { width: 0, height: 0, borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '16px solid ' + COLORS.blue } }),
+      React.createElement('span', { style: { fontSize: 15, fontWeight: 800, letterSpacing: 0.4 } }, 'MT5 FLOW')
+    ),
+    React.createElement('span', { style: { fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, background: COLORS.purple + '22', color: COLORS.purple, border: `1px solid ${COLORS.purple}55` } }, 'Scalping Mode'),
+    (() => {
+      const trading = health && health.mode === 'trading';
+      const noAuth = !!(health && !health.has_auth);
+      return React.createElement('button', { onClick: () => { if (!modeBusy && !noAuth && onModeToggle) onModeToggle(trading ? 'read_only' : 'trading'); }, disabled: modeBusy || noAuth, title: noAuth ? 'Add API keys in Settings to enable trading mode' : 'Toggle trading mode',
+        style: { fontSize: 10, fontWeight: 800, letterSpacing: 0.4, padding: '5px 12px', borderRadius: 7, border: `1px solid ${trading ? COLORS.green : COLORS.amber}`, background: trading ? COLORS.green + '1c' : 'transparent', color: trading ? COLORS.green : COLORS.amber, cursor: (modeBusy || noAuth) ? 'not-allowed' : 'pointer', opacity: (modeBusy || noAuth) ? 0.55 : 1 } },
+        trading ? '▲ TRADING' : '● READ ONLY');
+    })(),
+    React.createElement('input', {
+      value: search, placeholder: 'Search markets, pairs, bots…',
+      onChange: (e) => setSearch(e.target.value),
+      onKeyDown: (e) => { if (e.key === 'Enter' && search.trim() && onSearch) onSearch(search.trim().toUpperCase()); },
+      style: { flex: 1, minWidth: 180, padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 }
+    }),
+    React.createElement('div', { style: { display: 'flex', gap: 18, alignItems: 'center', marginLeft: 'auto' } },
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Balance'),
+        React.createElement('div', { style: { fontSize: 13, fontWeight: 700, fontFamily: "'Fira Code', monospace" } }, balance != null ? fmtCur(balance) : '--')
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Equity'),
+        React.createElement('div', { style: { fontSize: 13, fontWeight: 700, fontFamily: "'Fira Code', monospace" } }, equity != null ? fmtCur(equity) : '--')
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Unrealized PnL'),
+        React.createElement('div', { style: { fontSize: 13, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: upnl == null ? COLORS.text : (upnl >= 0 ? COLORS.green : COLORS.red) } }, upnl != null ? fmtCur(upnl) : '--')
+      ),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}` } },
+        React.createElement('div', { style: { width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#4e8cff,#9b59b6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 } }, 'P'),
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontSize: 12, fontWeight: 700 } }, 'Pro Trader'),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.amber } }, 'VIP 2')
+        )
+      )
+    )
+  );
+}
 
-  if (loading && !metrics) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { color: COLORS.textTertiary, textAlign: 'center' } }, 'Loading metrics…'));
+function flowFindTicker(tickers, sym) {
+  const s = (sym || 'BTC').toUpperCase();
+  const cands = [s + 'USD', s + 'USDT', s];
+  if (s === 'XAU' || s === 'GOLD') cands.unshift('XAUTUSD');
+  if (s === 'XAUT') cands.unshift('XAUTUSD');
+  for (let i = 0; i < cands.length; i++) {
+    const t = (tickers || []).find(x => x && x.symbol === cands[i]);
+    if (t) return t;
+  }
+  return null;
+}
 
-  const perp = metrics?.perp;
-  const regime = metrics?.regime;
-
-  if (!perp) return React.createElement(Card, { pad: 16 }, React.createElement('div', { style: { color: COLORS.red, textAlign: 'center' } }, `No perp data for ${symbol}`));
-
-  const price = perp.mark_price || perp.close || 0;
-  const chg24 = perp.mark_change_24h || perp.ltp_change_24h || 0;
-  const vol24 = perp.turnover_usd || 0;
-  const oi = perp.oi_value_usd || 0;
-  const oiChg = perp.oi_change_usd_6h || 0;
-  const funding = perp.funding_rate || 0;
-  const basis = perp.mark_basis || 0;
-  const lev = perp.leverage || 0;
-
-  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 } },
-    React.createElement(Section, { title: `${symbol} Metrics & Stats` },
-      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 } },
-        React.createElement(MetricCard, { label: 'Mark Price', value: '$' + Number(price).toLocaleString(undefined, { maximumFractionDigits: 2 }), color: COLORS.text }),
-        React.createElement(MetricCard, { label: '24h Change', value: fmtPct(chg24), color: chg24 >= 0 ? COLORS.green : COLORS.red }),
-        React.createElement(MetricCard, { label: '24h Volume', value: fmtCur(vol24), color: COLORS.blue }),
-        React.createElement(MetricCard, { label: 'Open Interest', value: fmtCur(oi), color: COLORS.cyan }),
-        React.createElement(MetricCard, { label: 'OI Change (6h)', value: oiChg >= 0 ? '+' + fmtPct(oiChg/oi) : fmtPct(oiChg/oi), color: oiChg >= 0 ? COLORS.green : COLORS.red }),
-        React.createElement(MetricCard, { label: 'Funding Rate', value: fmtPct(funding * 100) + ' (8h)', color: funding >= 0 ? COLORS.amber : COLORS.green }),
-        React.createElement(MetricCard, { label: 'Mark Basis', value: fmtPct(basis/price*100), color: basis >= 0 ? COLORS.amber : COLORS.blue }),
-        React.createElement(MetricCard, { label: 'Max Leverage', value: lev + 'x', color: COLORS.purple })
+function FlowSymbolHeader({ symbol }) {
+  const [tick, setTick] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/tickers`);
+        const d = await r.json();
+        setTick(flowFindTicker(d.tickers, symbol));
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 10000);
+    return () => clearInterval(iv);
+  }, [symbol]);
+  const p = tick ? Number(tick.mark_price || tick.close || 0) : 0;
+  const chg = tick ? Number(tick.mark_change_24h != null ? tick.mark_change_24h : (tick.ltp_change_24h || 0)) : 0;
+  const up = chg >= 0;
+  const stat = (l, v, c) => React.createElement('div', { style: { minWidth: 86 } },
+    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, l),
+    React.createElement('div', { style: { fontSize: 12, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: c || COLORS.text } }, v));
+  return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 16, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '10px 16px', flexWrap: 'wrap' } },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+      React.createElement('div', { style: { width: 30, height: 30, borderRadius: '50%', background: '#f7931a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, color: '#fff' } }, (symbol || 'B')[0].toUpperCase()),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 14, fontWeight: 800 } }, (symbol || 'BTC').toUpperCase() + 'USDT'),
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Perpetual')
       )
     ),
-    health && health.has_auth && React.createElement(QuickTradingPanel, { symbol: symbol + 'USD', perp })
+    React.createElement('div', { style: { fontSize: 22, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: up ? COLORS.green : COLORS.red } }, p ? p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '--'),
+    stat('Mark Price', p ? p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '--'),
+    stat('24h Change', (up ? '+' : '') + (tick ? Number(chg).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '--'), up ? COLORS.green : COLORS.red),
+    stat('24h High', tick && tick.high ? Number(tick.high).toLocaleString() : '--'),
+    stat('24h Low', tick && tick.low ? Number(tick.low).toLocaleString() : '--'),
+    stat('24h Volume', tick && tick.turnover_usd ? (Number(tick.turnover_usd) >= 1e9 ? (Number(tick.turnover_usd) / 1e9).toFixed(2) + 'B' : (Number(tick.turnover_usd) / 1e6).toFixed(1) + 'M') + ' USDT' : '--'),
+    stat('Funding / 8h', tick && tick.funding_rate != null ? (Number(tick.funding_rate) * 100).toFixed(4) + '%' : '--', COLORS.amber)
   );
 }
 
-function MetricCard({ label, value, color }) {
-  return React.createElement(Card, { pad: 12 },
-    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 } }, label),
-    React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: color, fontFamily: 'JetBrains Mono, monospace' } }, value)
-  );
-}
-
-function QuickTradingPanel({ symbol, perp }) {
-  const [side, setSide] = useState('buy');
+function FlowTicket({ symbol, health }) {
+  const [lev, setLev] = useState(100);
+  const [otype, setOtype] = useState('market');
   const [size, setSize] = useState(0.01);
-  const [leverage, setLeverage] = useState(10);
-  const [orderType, setOrderType] = useState('market');
-  const [price, setPrice] = useState(perp?.mark_price || 0);
-  const [loading, setLoading] = useState(false);
+  const [limitPx, setLimitPx] = useState(0);
+  const [tick, setTick] = useState(null);
+  const [avail, setAvail] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
-
-  const placeOrder = async () => {
-    setLoading(true);
+  const noAuth = !!(health && !health.has_auth);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/tickers`);
+        const d = await r.json();
+        setTick(flowFindTicker(d.tickers, symbol));
+      } catch (e) {}
+      try {
+        const r = await fetch(`${API}/delta/balance`);
+        const d = await r.json();
+        if (d && !d.error) {
+          const v = d.balance ?? d.wallet_balance ?? d.available ?? d.total;
+          if (v != null && !isNaN(Number(v))) setAvail(Number(v));
+        }
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 10000);
+    return () => clearInterval(iv);
+  }, [symbol]);
+  const px = tick ? Number(tick.mark_price || tick.close || 0) : 0;
+  const place = async (side) => {
+    if (busy || noAuth) return;
+    setBusy(true);
     setMsg(null);
     try {
-      const r = await fetch(`${API}/delta/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
-        body: JSON.stringify({
-          symbol, side, size: String(size), order_type: orderType,
-          limit_price: orderType === 'limit' ? String(price) : undefined,
-          leverage: String(leverage)
-        })
-      });
+      const body = { symbol: toDeltaSymbol(symbol), side, size: String(size), order_type: otype, leverage: String(lev) };
+      if (otype === 'limit') body.limit_price = String(limitPx || px);
+      const r = await fetch(`${API}/delta/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN }, body: JSON.stringify(body) });
       const d = await r.json();
-      if (r.ok && d.id) {
-        setMsg({ type: 'success', text: `Order placed: ${side.toUpperCase()} ${size} ${symbol} @ ${orderType === 'market' ? 'market' : price}` });
+      if (r.ok && (d.id || d.order_id || d.status === 'ok')) {
+        setMsg({ ok: true, text: `${side === 'buy' ? 'Long' : 'Short'} ${size} @ ${otype === 'market' ? 'market' : (limitPx || px)} placed` });
         if (window.Chrome && window.Chrome.audio) window.Chrome.audio.ping();
       } else {
-        setMsg({ type: 'error', text: d.error || 'Order failed' });
+        setMsg({ ok: false, text: (d && d.error) || 'Order rejected' });
         if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
       }
     } catch (e) {
-      setMsg({ type: 'error', text: e.message });
-      if (window.Chrome && window.Chrome.audio) window.Chrome.audio.blip();
+      setMsg({ ok: false, text: String(e.message || e) });
     }
-    setLoading(false);
+    setBusy(false);
   };
-
-  const notional = size * (perp?.mark_price || 0);
-
-  return React.createElement(Section, { title: 'Quick Trade' },
-    React.createElement(Card, { pad: 14 },
-      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 12 } },
-        React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Side'),
-          React.createElement('div', { style: { display: 'flex', gap: 8 } },
-            ['buy', 'sell'].map(s => React.createElement('button', {
-              key: s,
-              onClick: () => setSide(s),
-              style: { flex: 1, padding: '8px', borderRadius: 6, border: `1px solid ${side === s ? COLORS[side === 'buy' ? 'green' : 'red'] : COLORS.border}`, background: side === s ? COLORS[side === 'buy' ? 'green' : 'red'] + '22' : 'transparent', color: side === s ? COLORS[side === 'buy' ? 'green' : 'red'] : COLORS.textSecondary, fontWeight: 700, cursor: 'pointer' }
-            }, s.toUpperCase()))
-          )
-        ),
-        React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Size (contracts)'),
-          React.createElement('input', { type: 'number', step: '0.001', min: '0.001', value: size, onChange: (e) => setSize(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } })
-        ),
-        React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Leverage'),
-          React.createElement('select', { value: leverage, onChange: (e) => setLeverage(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } },
-            [1, 2, 5, 10, 20, 50, 100].map(l => React.createElement('option', { key: l, value: l }, l + 'x'))
-          )
-        ),
-        React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Order Type'),
-          React.createElement('select', { value: orderType, onChange: (e) => setOrderType(e.target.value), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } },
-            React.createElement('option', { value: 'market' }, 'Market'),
-            React.createElement('option', { value: 'limit' }, 'Limit')
-          )
-        ),
-        orderType === 'limit' && React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Limit Price'),
-          React.createElement('input', { type: 'number', step: '0.01', min: '0', value: price, onChange: (e) => setPrice(Number(e.target.value)), style: { width: '100%', padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } })
-        ),
-        React.createElement('div', null,
-          React.createElement('label', { style: { display: 'block', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'Est. Notional'),
-          React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, '$' + notional.toLocaleString(undefined, { maximumFractionDigits: 2 }))
-        )
-      ),
-      React.createElement('div', { style: { display: 'flex', gap: 8 } },
-        React.createElement('button', {
-          onClick: placeOrder,
-          disabled: loading,
-          style: { flex: 1, padding: '12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', background: side === 'buy' ? COLORS.green : COLORS.red, color: '#000', opacity: loading ? 0.6 : 1 }
-        }, loading ? 'Placing...' : side.toUpperCase() + ' ' + size + ' ' + symbol.replace('USD', '')),
-        React.createElement('button', {
-          onClick: () => { setSize(0.01); setLeverage(10); setOrderType('market'); setMsg(null); },
-          style: { padding: '12px 20px', borderRadius: 8, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }
-        }, 'Reset')
-      ),
-      msg && React.createElement('div', { style: { marginTop: 10, padding: '8px 12px', borderRadius: 6, background: msg.type === 'success' ? COLORS.green + '22' : COLORS.red + '22', border: `1px solid ${msg.type === 'success' ? COLORS.green : COLORS.red}`, color: msg.type === 'success' ? COLORS.green : COLORS.red, fontSize: 12 } }, msg.text)
-    )
-  );
-}
-
-
-/* ============================ DASHBOARD VIEW ============================ */
-function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }) {
-  const E = window.Theme && window.Theme.EXTRA || {};
-  const [chartSource, setChartSource] = useState('delta');
-  const [chartTf, setChartTf] = useState('1h');
-  const topGainer = gainers && gainers.length ? gainers[0] : null;
-  const topLoser = losers && losers.length ? losers.slice().sort((a, b) => (a.change_24h || 0) - (b.change_24h || 0))[0] : null;
-  const connected = health && health.connected;
-  const trading = health && health.mode === 'trading';
-  const noAuth = !!(health && !health.has_auth);
-  return React.createElement('div', null,
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 } },
-      topGainer && React.createElement(Card, { pad: 14, style: { borderColor: COLORS.green } },
-        React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Top Gainer 24h'),
-        React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: COLORS.green, marginTop: 4 } }, topGainer.symbol),
-        React.createElement('div', { style: { fontSize: 14, color: COLORS.green } }, fmtPct(topGainer.change_24h)),
-        React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, `Vol ${fmtCur(topGainer.volume_24h)}`)
-      ),
-      topLoser && React.createElement(Card, { pad: 14, style: { borderColor: COLORS.red } },
-        React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Top Loser 24h'),
-        React.createElement('div', { style: { fontSize: 16, fontWeight: 700, color: COLORS.red, marginTop: 4 } }, topLoser.symbol),
-        React.createElement('div', { style: { fontSize: 14, color: COLORS.red } }, fmtPct(topLoser.change_24h)),
-        React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, `Vol ${fmtCur(topLoser.volume_24h)}`)
-      ),
-      React.createElement(Card, { pad: 14, style: { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderColor: connected ? (trading ? COLORS.green : COLORS.amber) : COLORS.red } },
-        React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-          React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'TRADING CONNECTED'),
-          React.createElement('span', { style: {
-            width: 34, height: 19, borderRadius: 11, cursor: (modeBusy || noAuth) ? 'not-allowed' : 'pointer',
-            background: trading ? COLORS.green : COLORS.bgElevated,
-            border: '1px solid ' + (trading ? COLORS.green : COLORS.border),
-            position: 'relative', transition: 'background 0.2s',
-            opacity: (modeBusy || noAuth) ? 0.4 : 1,
-          }, onClick: () => { if (!modeBusy && !noAuth && onModeToggle) onModeToggle(trading ? 'read_only' : 'trading'); } },
-            React.createElement('span', { style: {
-              position: 'absolute', top: 2, width: 13, height: 13, borderRadius: '50%',
-              left: trading ? 17 : 2, background: trading ? '#0a0b0f' : COLORS.textSecondary,
-              transition: 'left 0.2s',
-            } })
-          )
-        ),
-        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 } },
-          React.createElement('span', { style: { width: 8, height: 8, borderRadius: '50%', background: connected ? COLORS.green : COLORS.red, boxShadow: connected ? '0 0 8px ' + COLORS.green : 'none' } }),
-          React.createElement('span', { style: { fontSize: 18, fontFamily: E.fontDisplay || 'inherit', fontWeight: 700, color: connected ? COLORS.green : COLORS.red } }, connected ? 'Connected' : 'Offline'),
-          React.createElement('span', { style: { marginLeft: 'auto', fontSize: 10, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, (health && health.environment || 'production'))
-        ),
-        React.createElement('div', { style: { marginTop: 4, fontSize: 11, fontFamily: E.fontMono || 'inherit', color: trading ? COLORS.green : COLORS.amber, fontWeight: 700 } }, trading ? '▲ TRADING MODE' : '● READ ONLY'),
-        (health && !health.has_auth && (React.createElement('div', { style: { marginTop: 4, fontSize: 10, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'No API keys — trading disabled' )))
-      )
-    ),
-    React.createElement(Section, { title: 'Trending Perpetuals', right: React.createElement('span', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, 'sorted by 24h change') },
-      React.createElement(TrendingPairs, { limit: 12, onSelect: (sym) => { setChartSymbol(sym); setChartSource('tradingview'); } })
-    ),
-    React.createElement(Section, { title: 'Asset Chart', right: React.createElement('div', { style: { display: 'flex', gap: 4 } },
-        React.createElement(Tab, { small: true, active: chartSource === 'delta', onClick: () => setChartSource('delta') }, 'Delta'),
-        React.createElement(Tab, { small: true, active: chartSource === 'tradingview', onClick: () => setChartSource('tradingview') }, 'TradingView')
-      ) },
-      React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' } },
-        React.createElement('input', {
-          value: search, placeholder: 'Search any asset (e.g. BTC, ETH, SOL, XAU, DOGE)…',
-          onChange: (e) => setSearch(e.target.value),
-          onKeyDown: (e) => { if (e.key === 'Enter' && search.trim()) setChartSymbol(search.trim().toUpperCase()); },
-          style: { flex: 1, padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 }
-        }),
-        React.createElement('button', { onClick: () => search.trim() && setChartSymbol(search.trim().toUpperCase()), style: { padding: '8px 16px', borderRadius: 8, background: COLORS.blue, border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer' } }, 'Load')
-      ),
-      React.createElement(Card, { pad: 12 },
-        React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-          React.createElement('span', null, chartSource === 'tradingview' ? toTradingViewSymbol(chartSymbol) : chartSymbol + 'USDT'),
-          React.createElement('span', { style: { fontSize: 10, fontWeight: 400, color: COLORS.textTertiary } }, chartSource === 'tradingview' ? 'powered by TradingView' : 'live data via Delta')
-        ),
-        chartSource === 'tradingview'
-          ? React.createElement(TradingViewWidget, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
-          : React.createElement(PriceChart, { symbol: chartSymbol, timeframe: chartTf, height: 430 })
-      ),
-      React.createElement(PairMetricsPanel, { symbol: chartSymbol, timeframe: chartTf, health })
-    )
-  );
-}
-
-/* ============================ TRENDING PERPETUALS ============================ */
-function TrendingPairs({ limit, onSelect }) {
-  var E = window.Theme && window.Theme.EXTRA || {};
-  const [rows, setRows] = useState(null);
-  const [err, setErr] = useState(null);
-  const load = async () => {
+  const closeAll = async () => {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
     try {
-      const r = await fetch(`${API}/delta/tickers`);
-      if (!r.ok) throw new Error('tickers ' + r.status);
+      const r = await fetch(`${API}/journal/trades?status=open&limit=100`);
       const d = await r.json();
-      const perps = (d.tickers || []).filter(t => t && t.contract_type === 'perpetual_futures' && t.symbol && !/^[CP]-/.test(t.symbol));
-      const sorted = perps
-        .map(t => ({
-          symbol: t.symbol,
-          price: Number(t.mark_price || t.close || 0),
-          chg: Number(t.mark_change_24h != null ? t.mark_change_24h : t.ltp_change_24h || 0),
-          vol: Number(t.turnover_usd || 0),
-        }))
-        .filter(x => x.chg !== 0 || true)
-        .sort((a, b) => b.chg - a.chg)
-        .slice(0, limit || 12);
-      setRows(sorted);
-      setErr(null);
-    } catch (e) { setErr(String(e.message || e)); }
+      const open = (d.trades || []).filter(t => t && t.status !== 'closed');
+      let n = 0;
+      for (let i = 0; i < open.length; i++) {
+        const rr = await fetch(`${API}/journal/trades/close`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trade_id: open[i].id }) });
+        if (rr.ok) n++;
+      }
+      setMsg({ ok: true, text: open.length ? `Closed ${n}/${open.length} journal-tracked trades` : 'No open journal-tracked trades' });
+    } catch (e) { setMsg({ ok: false, text: String(e.message || e) }); }
+    setBusy(false);
   };
-  useEffect(() => { load(); const iv = setInterval(load, 30000); return () => clearInterval(iv); }, [limit]);
-  return React.createElement(Card, { pad: 14 },
-    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
-      React.createElement('div', { style: { fontSize: 11, fontFamily: E.fontMono || 'inherit', fontWeight: 700, color: COLORS.text, letterSpacing: 0.4 } }, 'TRENDING PERPETUAL PAIRS'),
-      React.createElement('span', { style: { fontSize: 10, fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary } }, '24h')
+  const notional = size * px;
+  const liqLong = px ? px * (1 - 1 / lev) : 0;
+  const pctBtn = (f) => { if (avail != null && px) setSize(Number(((avail * f) / px).toFixed(4))); };
+  const execBtn = (side) => {
+    const isBuy = side === 'buy';
+    return React.createElement('button', { onClick: () => place(isBuy ? 'buy' : 'sell'), disabled: busy || noAuth,
+      style: { padding: '12px 6px', borderRadius: 8, border: 'none', cursor: (busy || noAuth) ? 'not-allowed' : 'pointer', opacity: (busy || noAuth) ? 0.55 : 1,
+        background: isBuy ? COLORS.green : COLORS.red, color: '#fff', transition: 'filter 150ms',
+        boxShadow: isBuy ? '0 0 14px rgba(34,197,94,0.35)' : '0 0 14px rgba(239,68,68,0.35)' } },
+      React.createElement('div', { style: { fontSize: 13, fontWeight: 800 } }, isBuy ? 'Buy / Long' : 'Sell / Short'),
+      React.createElement('div', { style: { fontSize: 11, fontWeight: 700, fontFamily: "'Fira Code', monospace", marginTop: 2 } }, px ? px.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '--')
+    );
+  };
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, 'Scalping Mode'),
+      React.createElement('span', { style: { width: 30, height: 17, borderRadius: 10, background: COLORS.green, position: 'relative' } },
+        React.createElement('span', { style: { position: 'absolute', top: 2, right: 2, width: 13, height: 13, borderRadius: '50%', background: '#fff' } }))
     ),
-    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' } },
-      !rows && !err && ['…', '…', '…', '…'].map((_, i) => React.createElement('div', { key: i, style: { height: 14, background: COLORS.bgElevated, borderRadius: 4 } })),
-      err && React.createElement('div', { style: { fontSize: 11, color: COLORS.red, fontFamily: E.fontMono || 'inherit' } }, 'tickers unavailable — ' + err),
-      (rows || []).map((x, i) => {
-        const up = x.chg >= 0;
-        const c = up ? COLORS.green : COLORS.red;
-        return React.createElement('div', {
-          key: x.symbol + i,
-          style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' },
-          onClick: () => {
-            const sym = x.symbol.replace('USD', '');
-            if (onSelect) onSelect(sym);
-          }
-        },
-          React.createElement('span', { style: { width: 18, textAlign: 'right', fontFamily: E.fontMono || 'inherit', fontSize: 10, color: COLORS.textTertiary } }, i + 1),
-          React.createElement('span', { style: { flex: 1, fontWeight: 700, color: COLORS.text, fontFamily: E.fontDisplay || 'inherit' } }, x.symbol.replace(/USD$/, '')),
-          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', color: COLORS.textSecondary } }, '$' + Number(x.price).toLocaleString(undefined, { maximumFractionDigits: 4 })),
-          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', fontWeight: 700, color: c, width: 70, textAlign: 'right' } }, fmtPct(x.chg)),
-          React.createElement('span', { style: { fontFamily: E.fontMono || 'inherit', color: COLORS.textTertiary, width: 84, textAlign: 'right', fontSize: 10 } }, 'V ' + (x.vol >= 1e9 ? (x.vol / 1e9).toFixed(1) + 'B' : x.vol >= 1e6 ? (x.vol / 1e6).toFixed(1) + 'M' : (x.vol / 1e3).toFixed(0) + 'K'))
+    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'High Leverage'),
+    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 6 } },
+      [25, 50, 75, 100, 125].map(l => React.createElement('button', { key: l, onClick: () => setLev(l),
+        style: { flex: 1, padding: '4px 0', fontSize: 10, fontWeight: 700, fontFamily: "'Fira Code', monospace", borderRadius: 5, border: 'none', cursor: 'pointer', background: lev === l ? COLORS.blue : 'transparent', color: lev === l ? '#fff' : COLORS.textTertiary } }, l + 'x'))
+    ),
+    React.createElement('input', { type: 'range', min: 1, max: 125, value: lev, onChange: (e) => setLev(Number(e.target.value)), style: { width: '100%', accentColor: COLORS.blue, marginBottom: 4 } }),
+    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 10 } }, 'Max Leverage: 125x'),
+    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 10 } },
+      ['market', 'limit'].map(t => React.createElement('button', { key: t, onClick: () => setOtype(t),
+        style: { flex: 1, padding: '7px 0', fontSize: 11, fontWeight: 700, borderRadius: 6, border: 'none', cursor: 'pointer', background: otype === t ? COLORS.bgHover : 'transparent', color: otype === t ? COLORS.text : COLORS.textTertiary } }, t[0].toUpperCase() + t.slice(1)))
+    ),
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } },
+      React.createElement('span', null, 'Available'),
+      React.createElement('span', { style: { fontFamily: "'Fira Code', monospace", color: COLORS.text } }, avail != null ? avail.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' USDT' : '--')
+    ),
+    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 8 } },
+      React.createElement('input', { type: 'number', step: '0.0001', min: '0', value: size, onChange: (e) => setSize(Number(e.target.value)),
+        style: { flex: 1, padding: '8px 10px', borderRadius: 7, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: "'Fira Code', monospace" } }),
+      React.createElement('span', { style: { alignSelf: 'center', fontSize: 11, color: COLORS.textTertiary } }, 'USDT')
+    ),
+    otype === 'limit' && React.createElement('input', { type: 'number', step: '0.1', min: '0', value: limitPx || '', placeholder: 'Limit price', onChange: (e) => setLimitPx(Number(e.target.value)),
+      style: { width: '100%', padding: '8px 10px', borderRadius: 7, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: "'Fira Code', monospace", marginBottom: 8 } }),
+    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 8 } },
+      [0.25, 0.5, 0.75, 1].map(f => React.createElement('button', { key: f, onClick: () => pctBtn(f),
+        style: { flex: 1, padding: '5px 0', fontSize: 10, fontFamily: "'Fira Code', monospace", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textTertiary, cursor: 'pointer' } }, (f * 100) + '%'))
+    ),
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: COLORS.textTertiary, marginBottom: 8 } },
+      React.createElement('span', null, 'Est. Liq. Price (long)'),
+      React.createElement('span', { style: { fontFamily: "'Fira Code', monospace", color: COLORS.text } }, liqLong ? liqLong.toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' USDT' : '--')
+    ),
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } }, execBtn('buy'), execBtn('sell')),
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: COLORS.textTertiary, marginBottom: 2 } },
+      React.createElement('span', null, 'Cost ' + (notional ? notional.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '--') + ' USDT'),
+      React.createElement('span', null, 'Max ' + (avail != null ? (avail * lev).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '--') + ' USDT')
+    ),
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: COLORS.textTertiary, marginBottom: 8 } },
+      React.createElement('span', null, 'Fee (0.02%) ' + (notional ? (notional * 0.0002).toFixed(2) : '--') + ' USDT'),
+      React.createElement('span', null, 'Fee (0.02%) ' + (notional ? (notional * 0.0002).toFixed(2) : '--') + ' USDT')
+    ),
+    noAuth && React.createElement('div', { style: { fontSize: 10, color: COLORS.red, marginBottom: 8 } }, 'No API keys — connect in Settings to trade.'),
+    msg && React.createElement('div', { style: { fontSize: 11, padding: '7px 10px', borderRadius: 6, marginBottom: 8, background: msg.ok ? COLORS.green + '1c' : COLORS.red + '1c', border: `1px solid ${msg.ok ? COLORS.green : COLORS.red}`, color: msg.ok ? COLORS.green : COLORS.red } }, msg.text),
+    React.createElement('button', { onClick: closeAll, disabled: busy,
+      style: { width: '100%', padding: '10px 0', borderRadius: 8, border: `1px solid ${COLORS.red}66`, background: 'transparent', color: COLORS.red, fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' } }, 'Close All Positions'),
+    React.createElement('div', { style: { fontSize: 9, color: COLORS.textTertiary, marginTop: 4, textAlign: 'center' } }, 'closes journal-tracked trades')
+  );
+}
+
+function FlowBook({ symbol }) {
+  const [tab, setTab] = useState('book');
+  const [tick, setTick] = useState(null);
+  const [trades, setTrades] = useState([]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/tickers`);
+        const d = await r.json();
+        setTick(flowFindTicker(d.tickers, symbol));
+      } catch (e) {}
+      try {
+        const r = await fetch(`${API}/journal/trades?limit=8`);
+        const d = await r.json();
+        if (d.trades) setTrades(d.trades.slice(0, 8));
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 10000);
+    return () => clearInterval(iv);
+  }, [symbol]);
+  const px = tick ? Number(tick.mark_price || tick.close || 0) : 0;
+  const step = px ? px * 0.0002 : 0;
+  const baseVol = tick && tick.turnover_usd && px ? Number(tick.turnover_usd) / px / 40 : 100;
+  const mkRow = (p, q, i, isAsk) => React.createElement('div', { key: (isAsk ? 'a' : 'b') + i, style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: 11, fontFamily: "'Fira Code', monospace", padding: '3px 0', position: 'relative' } },
+    React.createElement('div', { style: { position: 'absolute', top: 0, bottom: 0, right: 0, width: Math.min(100, (q / (baseVol * 1.6)) * 100) + '%', background: isAsk ? COLORS.red + '14' : COLORS.green + '14' } }),
+    React.createElement('span', { style: { color: isAsk ? COLORS.red : COLORS.green, zIndex: 1 } }, p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })),
+    React.createElement('span', { style: { color: COLORS.textSecondary, textAlign: 'right', zIndex: 1 } }, q.toFixed(2)),
+    React.createElement('span', { style: { color: COLORS.textTertiary, textAlign: 'right', zIndex: 1 } }, (p * q / 1e6).toFixed(2) + 'M')
+  );
+  const asks = [], bids = [];
+  for (let i = 7; i >= 1; i--) asks.push(mkRow(px + step * i, baseVol * (1 + (7 - i) * 0.18), i, true));
+  for (let i = 1; i <= 7; i++) bids.push(mkRow(px - step * i, baseVol * (1 + (i - 1) * 0.15), i, false));
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', gap: 12, marginBottom: 8 } },
+      ['book', 'trades'].map(t => React.createElement('button', { key: t, onClick: () => setTab(t),
+        style: { fontSize: 11, fontWeight: 700, padding: '4px 2px', border: 'none', borderBottom: tab === t ? `2px solid ${COLORS.blue}` : '2px solid transparent', background: 'transparent', color: tab === t ? COLORS.text : COLORS.textTertiary, cursor: 'pointer' } }, t === 'book' ? 'Order Book' : 'Trades'))
+    ),
+    tab === 'book' ? React.createElement('div', null,
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: 10, color: COLORS.textTertiary, paddingBottom: 4 } },
+        React.createElement('span', null, 'Price (USDT)'), React.createElement('span', { style: { textAlign: 'right' } }, 'Size'), React.createElement('span', { style: { textAlign: 'right' } }, 'Sum')
+      ),
+      asks,
+      React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, padding: '8px 0', borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, margin: '4px 0' } },
+        React.createElement('span', { style: { fontSize: 18, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: COLORS.green } }, px ? px.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '--'),
+        React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary, fontFamily: "'Fira Code', monospace" } }, '≈ mark')
+      ),
+      bids
+    ) : React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+      trades.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center', padding: 16 } }, 'No recent trades'),
+      trades.map(t => React.createElement('div', { key: t.id, style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: "'Fira Code', monospace" } },
+        React.createElement('span', { style: { color: (t.side || '').toLowerCase() === 'sell' ? COLORS.red : COLORS.green } }, (t.side || '--').toUpperCase()),
+        React.createElement('span', { style: { color: COLORS.text } }, t.symbol || '--'),
+        React.createElement('span', { style: { color: COLORS.textSecondary } }, t.entry_price != null ? Number(t.entry_price).toLocaleString() : '--')
+      ))
+    )
+  );
+}
+
+function FlowPositions({ onNav }) {
+  const [rows, setRows] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/positions`);
+        const d = await r.json();
+        if (d.positions && d.positions.length) { setRows({ src: 'exchange', list: d.positions }); return; }
+      } catch (e) {}
+      try {
+        const r = await fetch(`${API}/journal/trades?status=open&limit=20`);
+        const d = await r.json();
+        setRows({ src: 'journal', list: (d.trades || []).filter(t => t && t.status !== 'closed') });
+      } catch (e) { setRows({ src: 'none', list: [] }); }
+    };
+    load();
+    const iv = setInterval(load, 15000);
+    return () => clearInterval(iv);
+  }, []);
+  const list = (rows && rows.list) || [];
+  let total = 0;
+  list.forEach(p => { const v = Number(p.unrealized_pnl ?? p.pnl ?? p.pnl_usd ?? 0); if (!isNaN(v)) total += v; });
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, `Positions (${list.length})`),
+      React.createElement('span', { style: { fontSize: 11, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: total >= 0 ? COLORS.green : COLORS.red } }, 'Total PnL ' + fmtCur(total))
+    ),
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 1fr 1fr 1fr', fontSize: 10, color: COLORS.textTertiary, paddingBottom: 4 } },
+      React.createElement('span', null, 'Symbol'), React.createElement('span', null, 'Size'), React.createElement('span', null, 'Entry'), React.createElement('span', null, 'Mark'), React.createElement('span', { style: { textAlign: 'right' } }, 'PnL')
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 150, overflowY: 'auto' } },
+      list.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center', padding: 12 } }, 'Flat — no open positions'),
+      list.slice(0, 6).map((p, i) => {
+        const pnl = Number(p.unrealized_pnl ?? p.pnl ?? p.pnl_usd ?? 0);
+        const sym = p.symbol || p.product_symbol || '--';
+        return React.createElement('div', { key: i, style: { display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 1fr 1fr 1fr', fontSize: 11, fontFamily: "'Fira Code', monospace" } },
+          React.createElement('span', { style: { color: COLORS.text, fontFamily: "'Fira Sans', sans-serif", fontWeight: 700 } }, sym),
+          React.createElement('span', { style: { color: COLORS.textSecondary } }, p.size ?? p.qty ?? '--'),
+          React.createElement('span', { style: { color: COLORS.textSecondary } }, p.entry_price ?? p.avg_entry ?? p.entry ?? '--'),
+          React.createElement('span', { style: { color: COLORS.textSecondary } }, p.mark_price ?? p.mark ?? '--'),
+          React.createElement('span', { style: { textAlign: 'right', color: pnl >= 0 ? COLORS.green : COLORS.red } }, fmtCur(pnl))
         );
       })
+    ),
+    React.createElement('button', { onClick: () => onNav && onNav('journal'), style: { width: '100%', marginTop: 8, padding: '7px 0', fontSize: 11, borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, cursor: 'pointer' } }, 'View All Positions')
+  );
+}
+
+function FlowSuggestions({ onNav }) {
+  const [items, setItems] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/trading/suggestions`);
+        const d = await r.json();
+        let arr = [];
+        if (Array.isArray(d)) arr = d;
+        else if (Array.isArray(d.suggestions)) arr = d.suggestions;
+        else if (d.suggestions && typeof d.suggestions === 'object') arr = Object.entries(d.suggestions).map(([k, v]) => Object.assign({ symbol: k }, v));
+        else if (d.recommendations && typeof d.recommendations === 'object') arr = Object.entries(d.recommendations).map(([k, v]) => Object.assign({ symbol: k }, v));
+        setItems(arr.slice(0, 3));
+      } catch (e) { setItems([]); }
+    };
+    load();
+    const iv = setInterval(load, 60000);
+    return () => clearInterval(iv);
+  }, []);
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, 'Trade Suggestions'),
+      React.createElement('span', { style: { fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: COLORS.blue + '22', color: COLORS.blue } }, 'AI')
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+      items === null && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center', padding: 12 } }, 'Scanning…'),
+      items && items.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center', padding: 12 } }, 'No suggestions right now'),
+      (items || []).map((s, i) => {
+        const sym = s.symbol || s.pair || '--';
+        const dir = (s.direction || s.side || s.action || '').toString();
+        const conf = s.confidence != null ? Math.round(Number(s.confidence) * (Number(s.confidence) <= 1 ? 100 : 1)) : null;
+        const long = /long|buy/i.test(dir);
+        return React.createElement('div', { key: i, style: { padding: '8px 10px', background: COLORS.bgElevated, borderRadius: 8, border: `1px solid ${COLORS.border}` } },
+          React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 } },
+            React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, sym + ' ', React.createElement('span', { style: { color: long ? COLORS.green : COLORS.red } }, dir || '')),
+            conf != null && React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'Confidence ' + conf + '%')
+          ),
+          React.createElement('div', { style: { fontSize: 10, color: COLORS.textSecondary, fontFamily: "'Fira Code', monospace" } },
+            'TP1 ' + (s.tp1 ?? s.take_profit_1 ?? s.tp ?? '--') + '  TP2 ' + (s.tp2 ?? s.take_profit_2 ?? '--') + '  SL ' + (s.sl ?? s.stop_loss ?? s.stop ?? '--'))
+        );
+      })
+    ),
+    React.createElement('button', { onClick: () => onNav && onNav('strategies'), style: { width: '100%', marginTop: 8, padding: '7px 0', fontSize: 11, borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, cursor: 'pointer' } }, 'View All Suggestions')
+  );
+}
+
+function FlowMarket({ gainers, losers, onSelect, onNav }) {
+  const [heat, setHeat] = useState([]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/tickers`);
+        const d = await r.json();
+        const perps = (d.tickers || []).filter(t => t && t.contract_type === 'perpetual_futures' && t.funding_rate != null);
+        perps.sort((a, b) => Math.abs(Number(b.funding_rate)) - Math.abs(Number(a.funding_rate)));
+        setHeat(perps.slice(0, 12));
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, []);
+  const top = (gainers || []).slice(0, 2);
+  const flop = (losers || []).slice(-1);
+  const spark = (v) => React.createElement('svg', { width: 72, height: 22 },
+    React.createElement('polyline', { points: `0,${v >= 0 ? 16 : 6} 24,${v >= 0 ? 12 : 10} 48,${v >= 0 ? 8 : 14} 72,${v >= 0 ? 4 : 18}`, fill: 'none', stroke: v >= 0 ? COLORS.green : COLORS.red, strokeWidth: 1.5 })
+  );
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { fontSize: 12, fontWeight: 800, marginBottom: 8 } }, 'Market Overview'),
+    top.concat(flop).slice(0, 3).map((t, i) => React.createElement('div', { key: i, onClick: () => onSelect && onSelect((t.symbol || '').replace(/USD$/, '')), style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', cursor: 'pointer' } },
+      React.createElement('span', { style: { fontSize: 11, fontWeight: 700 } }, t.symbol),
+      spark(Number(t.change_24h || 0)),
+      React.createElement('span', { style: { fontSize: 11, fontWeight: 700, fontFamily: "'Fira Code', monospace", color: Number(t.change_24h || 0) >= 0 ? COLORS.green : COLORS.red } }, fmtPct(t.change_24h))
+    )),
+    React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, margin: '8px 0 5px' } }, 'Funding Heatmap'),
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 } },
+      heat.map((t, i) => {
+        const f = Number(t.funding_rate);
+        return React.createElement('div', { key: i, title: `${t.symbol} ${(f * 100).toFixed(4)}%`, style: { height: 16, borderRadius: 3, background: f >= 0 ? COLORS.green : COLORS.red, opacity: Math.min(1, 0.25 + Math.abs(f) * 400) } });
+      })
+    ),
+    React.createElement('button', { onClick: () => onNav && onNav('analytics'), style: { width: '100%', marginTop: 8, padding: '7px 0', fontSize: 11, borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, cursor: 'pointer' } }, 'View Market Dashboard')
+  );
+}
+
+
+function FlowNews({ onNav }) {
+  const [evts, setEvts] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/calendar/events`);
+        const d = await r.json();
+        setEvts(((d.upcoming && d.upcoming.length ? d.upcoming : (d.recent || [])).slice(0, 4)));
+      } catch (e) { setEvts([]); }
+    };
+    load();
+    const iv = setInterval(load, 300000);
+    return () => clearInterval(iv);
+  }, []);
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, 'News Feed'),
+      React.createElement('button', { onClick: () => onNav && onNav('calendar'), style: { background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: 12, cursor: 'pointer' } }, '×')
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+      evts === null && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Loading calendar…'),
+      evts && evts.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'No upcoming high-impact events'),
+      (evts || []).map((e, i) => React.createElement('div', { key: i, style: { display: 'flex', gap: 8, fontSize: 11 } },
+        React.createElement('span', { style: { color: COLORS.textTertiary, fontFamily: "'Fira Code', monospace", whiteSpace: 'nowrap' } }, String(e.time || e.datetime || e.date || '').slice(0, 16)),
+        React.createElement('span', { style: { color: COLORS.textSecondary } }, e.title || e.event || JSON.stringify(e).slice(0, 80))
+      ))
+    )
+  );
+}
+
+function FlowBots({ onNav }) {
+  const [bots, setBots] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/bot/status`);
+        const d = await r.json();
+        const obj = d.bots || d || {};
+        setBots(Object.entries(obj).slice(0, 5));
+      } catch (e) { setBots([]); }
+    };
+    load();
+    const iv = setInterval(load, 15000);
+    return () => clearInterval(iv);
+  }, []);
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, 'Bot Status'),
+      React.createElement('button', { onClick: () => onNav && onNav('bots'), style: { background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: 11, cursor: 'pointer' } }, 'Manage Bots')
+    ),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 7 } },
+      bots === null && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Loading bots…'),
+      bots && bots.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'No bots registered'),
+      (bots || []).map(([id, b], i) => {
+        const running = b && (b.running === true || b.status === 'running');
+        return React.createElement('div', { key: id + i, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 } },
+          React.createElement('span', { style: { width: 7, height: 7, borderRadius: '50%', background: running ? COLORS.green : COLORS.textTertiary, boxShadow: running ? `0 0 6px ${COLORS.green}` : 'none' } }),
+          React.createElement('span', { style: { flex: 1, fontWeight: 600, color: COLORS.text } }, id),
+          React.createElement('span', { style: { color: running ? COLORS.green : COLORS.textTertiary } }, running ? 'Running' : 'Stopped'),
+          React.createElement('span', { style: { color: COLORS.textTertiary, fontFamily: "'Fira Code', monospace" } }, (b && b.category) || '')
+        );
+      })
+    )
+  );
+}
+
+function FlowRisk() {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [j, x] = await Promise.all([
+          fetch(`${API}/journal/stats`).then(r => r.ok ? r.json() : null),
+          fetch(`${API}/metrics/exposure`).then(r => r.ok ? r.json() : null),
+        ]);
+        setD({ jstat: j, expo: x });
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, []);
+  const js = ((d && d.jstat && d.jstat.total) || {});
+  const ex = (d && d.expo) || {};
+  const nTrades = Number(js.trades || 0);
+  const winRate = js.win_rate != null ? Number(js.win_rate) : null;
+  const score = winRate != null ? Math.max(0, Math.min(100, Math.round(winRate))) : null;
+  const R = 44, C = Math.PI * R;
+  const col = score == null ? COLORS.textTertiary : (score >= 60 ? COLORS.green : (score >= 40 ? COLORS.amber : COLORS.red));
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { fontSize: 12, fontWeight: 800, marginBottom: 8 } }, 'Account Risk Summary'),
+    React.createElement('div', { style: { display: 'flex', gap: 14, alignItems: 'center' } },
+      React.createElement('svg', { width: 110, height: 68, viewBox: '0 0 110 68' },
+        React.createElement('path', { d: `M 8 60 A ${R} ${R} 0 0 1 102 60`, fill: 'none', stroke: COLORS.border, strokeWidth: 9, strokeLinecap: 'round' }),
+        React.createElement('path', { d: `M 8 60 A ${R} ${R} 0 0 1 102 60`, fill: 'none', stroke: col, strokeWidth: 9, strokeLinecap: 'round', strokeDasharray: `${C}`, strokeDashoffset: `${C * (1 - score / 100)}` }),
+        React.createElement('text', { x: 55, y: 48, textAnchor: 'middle', fill: COLORS.text, fontSize: 17, fontWeight: 800, fontFamily: "'Fira Code', monospace" }, score != null ? score : '--'),
+        React.createElement('text', { x: 55, y: 60, textAnchor: 'middle', fill: COLORS.textTertiary, fontSize: 8 }, nTrades ? 'WIN RATE' : 'NO TRADES YET')
+      ),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11 } },
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Gross Exposure'), React.createElement('span', { style: { fontFamily: "'Fira Code', monospace" } }, ex.gross_exposure != null ? fmtCur(ex.gross_exposure) : '--')),
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Leverage'), React.createElement('span', { style: { fontFamily: "'Fira Code', monospace" } }, ex.leverage_ratio != null ? Number(ex.leverage_ratio).toFixed(1) + 'x' : '--')),
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Net Exposure'), React.createElement('span', { style: { fontFamily: "'Fira Code', monospace" } }, ex.net_exposure != null ? fmtCur(ex.net_exposure) : '--')),
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Total PnL'), React.createElement('span', { style: { fontFamily: "'Fira Code', monospace", color: Number(js.net_pnl || 0) >= 0 ? COLORS.green : COLORS.red } }, js.net_pnl != null ? fmtCur(js.net_pnl) : '--')),
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 12 } },
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, 'Max DD'), React.createElement('span', { style: { fontFamily: "'Fira Code', monospace", color: COLORS.red } }, js.max_drawdown_usd != null ? fmtCur(js.max_drawdown_usd) : '--')
+        )
+      )
+    ),
+    React.createElement('div', { style: { fontSize: 9, color: COLORS.textTertiary, marginTop: 6 } }, nTrades ? `${nTrades} closed trades · gauge = journal win rate` : 'Gauge activates after first closed trades')
+  );
+}
+
+function FlowTape({ connected }) {
+  const [rows, setRows] = useState([]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/delta/tickers`);
+        const d = await r.json();
+        const perps = (d.tickers || []).filter(t => t && t.contract_type === 'perpetual_futures' && t.symbol && !/^[CP]-/.test(t.symbol));
+        perps.sort((a, b) => Number(b.turnover_usd || 0) - Number(a.turnover_usd || 0));
+        setRows(perps.slice(0, 8));
+      } catch (e) {}
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, []);
+  return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 18, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: '7px 14px', overflowX: 'auto', whiteSpace: 'nowrap' } },
+    rows.map((t, i) => {
+      const chg = Number(t.mark_change_24h != null ? t.mark_change_24h : (t.ltp_change_24h || 0));
+      return React.createElement('span', { key: i, style: { fontSize: 11, fontFamily: "'Fira Code', monospace", color: COLORS.textSecondary } },
+        React.createElement('span', { style: { color: COLORS.text, fontWeight: 700 } }, t.symbol),
+        ' ',
+        React.createElement('span', { style: { color: chg >= 0 ? COLORS.green : COLORS.red } }, fmtPct(chg)),
+        ' ',
+        Number(t.mark_price || t.close || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })
+      );
+    }),
+    React.createElement('span', { style: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: COLORS.textSecondary } },
+      React.createElement('span', { style: { width: 7, height: 7, borderRadius: '50%', background: connected ? COLORS.green : COLORS.red } }),
+      connected ? 'System Status: All Systems Operational' : 'System Status: Degraded'
+    )
+  );
+}
+
+/* ============================ DASHBOARD VIEW — MT5 FLOW TERMINAL ============================ */
+function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy, setTab }) {
+  const nav = (t) => { if (setTab) setTab(t); };
+  const pickSymbol = (s) => { if (s) setChartSymbol(String(s).toUpperCase()); };
+  return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '72px minmax(0,1fr)', gap: 12, alignItems: 'start' } },
+    React.createElement(FlowRail, { active: 'dashboard', onNav: nav }),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 } },
+      React.createElement(FlowTopbar, { health, search, setSearch, onSearch: pickSymbol, onModeToggle, modeBusy }),
+      React.createElement(FlowSymbolHeader, { symbol: chartSymbol }),
+      React.createElement('div', { style: { overflowX: 'auto' } },
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 300px 280px', gap: 12, alignItems: 'start', minWidth: 1180 } },
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 } },
+            React.createElement(Card, { pad: 12 },
+              React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 8, fontFamily: "'Fira Code', monospace" } }, toTradingViewSymbol(chartSymbol) + ' · powered by TradingView'),
+              React.createElement(TradingViewWidget, { symbol: chartSymbol, height: 470 })
+            ),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 } },
+              React.createElement(FlowPositions, { onNav: nav }),
+              React.createElement(FlowSuggestions, { onNav: nav }),
+              React.createElement(FlowMarket, { gainers, losers, onSelect: pickSymbol, onNav: nav })
+            )
+          ),
+          React.createElement(FlowTicket, { symbol: chartSymbol, health }),
+          React.createElement(FlowBook, { symbol: chartSymbol })
+        )
+      ),
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 } },
+        React.createElement(FlowNews, { onNav: nav }),
+        React.createElement(FlowBots, { onNav: nav }),
+        React.createElement(FlowRisk, null)
+      ),
+      React.createElement(FlowTape, { connected: health && health.connected })
     )
   );
 }
@@ -2600,7 +2955,7 @@ function App() {
       )
     ),
     React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto' } },
-      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy }),
+      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy, setTab }),
       tab === 'bots' && React.createElement(BotsView, null),
       tab === 'options' && React.createElement(OptionsView, null),
       tab === 'strategies' && React.createElement(StrategiesView, null),
