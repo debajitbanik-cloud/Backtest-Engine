@@ -2833,14 +2833,60 @@ function SlimBanner({ onSelect }) {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
       }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     `)
   );
 }
 
 /* ============================ MAIN APP ============================ */
+function useTabHistory(initialTab) {
+  const [tab, setTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || initialTab;
+  });
+  const [historyReady, setHistoryReady] = useState(false);
+  const navCountRef = useRef(0);
+
+  const navigate = (newTab, { replace } = {}) => {
+    if (newTab === tab) return;
+    setTab(newTab);
+    navCountRef.current++;
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', newTab);
+    if (replace || navCountRef.current === 1) {
+      window.history.replaceState({ tab: newTab }, '', url);
+    } else {
+      window.history.pushState({ tab: newTab }, '', url);
+    }
+  };
+
+  useEffect(() => {
+    const onPop = (e) => {
+      if (e.state && e.state.tab) {
+        setTab(e.state.tab);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get('tab') || initialTab;
+        setTab(t);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    setHistoryReady(true);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [initialTab]);
+
+  const canGoBack = historyReady && navCountRef.current > 1;
+  const goBack = () => window.history.back();
+
+  return { tab, navigate, canGoBack, goBack };
+}
+
 function App() {
   const E = window.Theme && window.Theme.EXTRA || {};
-  const [tab, setTab] = useState('dashboard');
+  const { tab, navigate, canGoBack, goBack } = useTabHistory('dashboard');
   const [connected, setConnected] = useState(false);
   const [health, setHealth] = useState(null);
   const [gainers, setGainers] = useState([]);
@@ -2849,7 +2895,7 @@ function App() {
   const [chartSymbol, setChartSymbol] = useState('BTC');
   const [modeBusy, setModeBusy] = useState(false);
   const pendingTermRef = useRef(null);
-  const setTerminalCommand = (cmd) => { pendingTermRef.current = cmd; setTab('terminal'); };
+  const setTerminalCommand = (cmd) => { pendingTermRef.current = cmd; navigate('terminal'); };
   const onModeToggle = async (mode) => {
     if (modeBusy) return;
     setModeBusy(true);
@@ -2926,7 +2972,7 @@ function App() {
           pal.id = 'command-palette-root';
           document.body.appendChild(pal);
         }
-        window.Palette.mount(pal, { onNavigate: (k) => setTab(k) });
+        window.Palette.mount(pal, { onNavigate: (k) => navigate(k) });
         if (window.Palette.setTerminalRunner) window.Palette.setTerminalRunner(setTerminalCommand);
       }
     } catch (e) {}
@@ -2946,15 +2992,20 @@ function App() {
   ];
 
   return React.createElement('div', { style: { minHeight: '100vh', background: COLORS.bgRoot, color: COLORS.text } },
-    React.createElement(SlimBanner, { onSelect: (sym) => { const m = { GOLD: 'XAU' }; const s = m[sym] || sym; if (['OIL', 'DXY'].includes(s)) return; setChartSymbol(s); setTab('dashboard'); } }),
+    React.createElement(SlimBanner, { onSelect: (sym) => { const m = { GOLD: 'XAU' }; const s = m[sym] || sym; if (['OIL', 'DXY'].includes(s)) return; setChartSymbol(s); navigate('dashboard'); } }),
     React.createElement('header', { style: { position: 'sticky', top: 24, zIndex: 50, background: 'rgba(10,11,15,0.95)', borderBottom: `1px solid ${COLORS.border}`, padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(8px)' } },
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+        canGoBack && React.createElement('button', {
+          onClick: goBack,
+          title: 'Go back',
+          style: { padding: '5px 8px', borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s, color 0.15s' }
+        }, '←'),
         React.createElement('div', { style: { width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#4e8cff,#9b59b6)' } }),
         React.createElement('span', { style: { fontSize: 15, fontFamily: E.fontDisplay || 'inherit', fontWeight: 800, letterSpacing: 0.4 } }, 'Trading Command Center')
       ),
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 14 } },
         React.createElement('div', { style: { display: 'flex', gap: 6, background: COLORS.bgElevated, padding: 4, borderRadius: 10, border: `1px solid ${COLORS.border}` } },
-          tabs.map(t => React.createElement(Tab, { key: t.id, small: true, active: tab === t.id, onClick: () => setTab(t.id) }, t.label))
+          tabs.map(t => React.createElement(Tab, { key: t.id, small: true, active: tab === t.id, onClick: () => navigate(t.id) }, t.label))
         ),
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', fontSize: 12, color: COLORS.textSecondary } },
           React.createElement(StatusDot, { on: connected }), connected ? 'Live' : 'Offline'
@@ -2970,7 +3021,7 @@ function App() {
         }, 'SOUND ON')
       )
     ),
-    React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto' } },
+    React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto', animation: 'fadeIn 0.18s ease-out' } },
       tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy, setTab }),
       tab === 'bots' && React.createElement(BotsView, null),
       tab === 'options' && React.createElement(OptionsView, null),
