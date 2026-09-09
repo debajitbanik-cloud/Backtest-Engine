@@ -1,5 +1,5 @@
 /* terminal.js — interactive REPL terminal view */
-var _API = 'http://127.0.0.1:8088';
+var _API = '';
 function _tFetch(path) {
   return fetch(_API + path).then(function (r) {
     if (!r.ok) { return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ': ' + t); }); }

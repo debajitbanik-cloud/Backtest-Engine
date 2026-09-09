@@ -1,5 +1,5 @@
 /* palette.js — Cmd+K / Ctrl+K command palette */
-var _pAPI = 'http://127.0.0.1:8088';
+var _pAPI = '';
 function _pFetch(path) {
   return fetch(_pAPI + path).then(function (r) {
     if (!r.ok) return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ': ' + t); });

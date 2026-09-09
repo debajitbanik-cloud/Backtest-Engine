@@ -1,5 +1,5 @@
 const { useState, useEffect, useRef, useMemo } = React;
-const API = 'http://127.0.0.1:8088';
+const API = '';
 const BRIDGE_TOKEN = '8G8VGUXx1sjVEmK7Y2fqs0VF6wcukOXSXwI6dVv24WY';
 
 const COLORS = {
