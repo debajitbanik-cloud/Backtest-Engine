@@ -76,6 +76,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-changeme}
       MINIO_BUCKET: trading-data
+      # Bridge auth (must match hardcoded token in ui/app.jsx)
+      BRIDGE_AUTH_TOKEN: ${BRIDGE_AUTH_TOKEN:-}
       # Delta Exchange (testnet by default)
       DELTA_API_KEY: ${DELTA_API_KEY:-}
       DELTA_API_SECRET: ${DELTA_API_SECRET:-}
@@ -93,7 +95,7 @@ services:
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
-      - "8080:8080"  # Python bridge
+      - "8088:8088"  # Python bridge
       - "3000:3000"  # Admin UI
     depends_on:
       postgres:
@@ -111,7 +113,7 @@ services:
       - trading_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -35,11 +35,11 @@ RUN useradd -m -u 1000 trader && chown -R trader:trader /app
 USER trader
 
 # Expose ports
-EXPOSE 8080 3000
+EXPOSE 8088 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8088/health || exit 1
 
 # Default command
 CMD ["python", "agent_system/main.py"]
