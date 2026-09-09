@@ -2849,9 +2849,11 @@ function useTabHistory(initialTab) {
   });
   const [historyReady, setHistoryReady] = useState(false);
   const navCountRef = useRef(0);
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
 
   const navigate = (newTab, { replace } = {}) => {
-    if (newTab === tab) return;
+    if (newTab === tabRef.current) return;
     setTab(newTab);
     navCountRef.current++;
     const url = new URL(window.location.href);
@@ -3022,7 +3024,7 @@ function App() {
       )
     ),
     React.createElement('main', { style: { padding: 18, maxWidth: 1400, margin: '0 auto', animation: 'fadeIn 0.18s ease-out' } },
-      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy, setTab }),
+      tab === 'dashboard' && React.createElement(DashboardView, { gainers, losers, health, search, setSearch, chartSymbol, setChartSymbol, onModeToggle, modeBusy, setTab: navigate }),
       tab === 'bots' && React.createElement(BotsView, null),
       tab === 'options' && React.createElement(OptionsView, null),
       tab === 'strategies' && React.createElement(StrategiesView, null),
