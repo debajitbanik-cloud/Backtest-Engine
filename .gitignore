@@ -31,6 +31,9 @@ data/calendar_cache.json
 # SDD workspace (agent scratch, not source)
 .superpowers/
 
+# Git worktrees (isolated build checkouts, not source)
+.worktrees/
+
 # OS
 .DS_Store
 
