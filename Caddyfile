@@ -34,11 +34,12 @@ trading.yourdomain.com {
         Referrer-Policy "strict-origin-when-cross-origin"
     }
 
-    # Rate limiting
-    rate_limit {
-        zone default 10r/s
-        key {remote}
-    }
+    # Rate limiting (requires the caddy rate-limit plugin;
+    # disabled for local runs — stock caddy image has no such directive)
+    # rate_limit {
+    #     zone default 10r/s
+    #     key {remote}
+    # }
 }
 
 # Admin UI subdomain

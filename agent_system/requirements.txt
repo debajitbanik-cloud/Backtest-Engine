@@ -46,7 +46,12 @@ black>=23.0.0
 ruff>=0.1.0
 
 # Backtesting & Research
+backtesting>=0.3.0
 backtrader>=1.9.78
+fastapi>=0.100.0
+pydantic>=2.0.0
+pyarrow>=15.0.0
+uvicorn>=0.20.0
 yfinance>=0.2.44
 vectorbt>=0.28.0
 # qlib>=0.8.0  # Optional: install separately if needed (platform-specific)
