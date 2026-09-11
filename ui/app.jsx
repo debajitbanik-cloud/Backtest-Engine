@@ -582,6 +582,472 @@ function TradingViewWidget({ symbol, timeframe, height }) {
   );
 }
 
+/* ============================ PINE INDICATORS (TASK 9) ============================
+   IndicatorChart: own lightweight-charts panel (TradingViewWidget is a sealed
+   iframe and is never touched). Candles are fetched via /delta/candles (same
+   params as PriceChart); indicator plots come from
+   GET /indicators/<id>/series which returns only {plots:[{name,color,values}]}
+   (no candles, no markers, no overlay flags — verified against
+   bridge/python_bridge.py). Plot values align to candle times by tail index.
+   lightweight-charts@4.1.3 (same dynamic build PriceChart injects; NOT in
+   index.html — verified) has no multi-pane API (panes are v5+), so
+   oscillator-style plots render in a second chart instance below the main
+   chart, per the task brief. Constant plots (hline) become price lines;
+   buy/sell markers render only if the series payload provides them. */
+var __lcPromise = null;
+function ensureLightweightCharts() {
+  if (window.LightweightCharts) return Promise.resolve(window.LightweightCharts);
+  if (__lcPromise) return __lcPromise;
+  __lcPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
+    s.onload = () => (window.LightweightCharts ? resolve(window.LightweightCharts) : reject(new Error('lightweight-charts unavailable')));
+    s.onerror = () => reject(new Error('lightweight-charts failed to load'));
+    document.head.appendChild(s);
+  });
+  return __lcPromise;
+}
+
+const PINE_SOURCE_OPTIONS = ['open', 'high', 'low', 'close', 'hl2', 'hlc3', 'ohlc4'];
+const PINE_TF_OPTIONS = ['1m', '5m', '15m', '1h', '4h', '1d'];
+const OSC_NAME_RE = /(rsi|stoch|macd|cci|mfi|momentum|osc|hist|signal|%k|%d|williams|stochrsi|awesome)/i;
+const PINE_PALETTE = ['#4e8cff', '#f0a500', '#9b59b6', '#00c8e8', '#22C55E', '#EF4444'];
+
+function isOscillatorPlot(name, values, closes) {
+  if (OSC_NAME_RE.test(name || '')) return true;
+  const nums = (values || []).filter(v => v != null && !isNaN(v));
+  if (nums.length < 5) return false;
+  if (!nums.every(v => v >= -5 && v <= 105)) return false;
+  const cs = (closes || []).filter(v => v != null && !isNaN(v));
+  if (!cs.length) return false;
+  const sorted = cs.slice().sort((a, b) => a - b);
+  const med = sorted[Math.floor(sorted.length / 2)];
+  return med < -5 || med > 105;
+}
+
+function isConstantSeries(values) {
+  const nums = (values || []).filter(v => v != null && !isNaN(v));
+  if (nums.length < 2) return false;
+  return nums.every(v => v === nums[0]);
+}
+
+function alignTail(values, times) {
+  const n = Math.min((values || []).length, (times || []).length);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const v = values[values.length - n + i];
+    if (v == null || isNaN(v)) continue;
+    out.push({ time: times[times.length - n + i], value: v });
+  }
+  return out;
+}
+
+function IndicatorChart({ symbol, timeframe, plots, markers, height, limit }) {
+  const mainRef = useRef(null);
+  const oscRef = useRef(null);
+  const liveRef = useRef({ main: null, osc: null });
+  const [status, setStatus] = useState('loading');
+  const [oscCount, setOscCount] = useState(0);
+  const H = height || 300;
+  const lim = limit || 250;
+
+  useEffect(() => {
+    let cancelled = false;
+    const AC = typeof AbortController !== 'undefined' ? AbortController : null;
+    const ctrl = AC ? new AC() : null;
+    const destroy = () => {
+      const live = liveRef.current || {};
+      if (live.main) { try { live.main.remove(); } catch (e) {} live.main = null; }
+      if (live.osc) { try { live.osc.remove(); } catch (e) {} live.osc = null; }
+    };
+    setStatus('loading');
+    const run = async () => {
+      try {
+        const LC = await ensureLightweightCharts();
+        if (cancelled) return;
+        const now = Math.floor(Date.now() / 1000);
+        const tfSec = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 };
+        const start = now - (tfSec[timeframe] || 3600) * lim;
+        const r = await fetch(`${API}/delta/candles?symbol=${toDeltaSymbol(symbol)}&resolution=${timeframe}&start=${start}&end=${now}&limit=${lim}`, ctrl ? { signal: ctrl.signal } : {});
+        const d = await r.json();
+        if (cancelled) return;
+        const candles = (d.result || []).map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close }));
+        if (!candles.length || !mainRef.current) { destroy(); setOscCount(0); setStatus('empty'); return; }
+        destroy();
+        const main = LC.createChart(mainRef.current, {
+          width: mainRef.current.clientWidth || 600, height: H,
+          layout: { background: { color: '#020617' }, textColor: '#F8FAFC' },
+          grid: { vertLines: { color: '#334155' }, horzLines: { color: '#334155' } },
+          crosshair: { mode: LC.CrosshairMode.Normal },
+          rightPriceScale: { borderColor: '#334155' },
+          timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
+        });
+        liveRef.current.main = main;
+        const candleSeries = main.addCandlestickSeries({ upColor: '#22C55E', downColor: '#EF4444', borderUpColor: '#22C55E', borderDownColor: '#EF4444', wickUpColor: '#22C55E', wickDownColor: '#EF4444' });
+        candleSeries.setData(candles);
+        const closes = candles.map(c => c.close);
+        const times = candles.map(c => c.time);
+        const oscPlots = [];
+        (plots || []).forEach((p, i) => {
+          const vals = (p && p.values) || [];
+          if (!vals.length) return;
+          if (isConstantSeries(vals)) {
+            const nums = vals.filter(v => v != null && !isNaN(v));
+            try {
+              candleSeries.createPriceLine({ price: nums[0], color: (p && p.color) || PINE_PALETTE[i % PINE_PALETTE.length], lineWidth: 1, lineStyle: LC.LineStyle.Dashed, axisLabelVisible: true, title: (p && p.name) || '' });
+            } catch (e) {}
+            return;
+          }
+          if (isOscillatorPlot(p && p.name, vals, closes)) { oscPlots.push({ p, i }); return; }
+          try {
+            const ls = main.addLineSeries({ color: (p && p.color) || PINE_PALETTE[i % PINE_PALETTE.length], lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
+            ls.setData(alignTail(vals, times));
+          } catch (e) {}
+        });
+        if (markers && markers.length && candleSeries.setMarkers) {
+          try {
+            candleSeries.setMarkers(markers.map(mk => ({
+              time: mk.time,
+              position: mk.position || 'belowBar',
+              color: mk.color || (mk.side === 'sell' ? '#EF4444' : '#22C55E'),
+              shape: mk.shape || (mk.side === 'sell' ? 'arrowDown' : 'arrowUp'),
+              text: mk.text || (mk.side === 'sell' ? 'S' : 'B'),
+            })));
+          } catch (e) {}
+        }
+        try { main.timeScale().fitContent(); } catch (e) {}
+        if (oscPlots.length && oscRef.current) {
+          try {
+            const osc = LC.createChart(oscRef.current, {
+              width: oscRef.current.clientWidth || 600, height: 140,
+              layout: { background: { color: '#020617' }, textColor: '#F8FAFC' },
+              grid: { vertLines: { color: '#334155' }, horzLines: { color: '#334155' } },
+              crosshair: { mode: LC.CrosshairMode.Normal },
+              rightPriceScale: { borderColor: '#334155' },
+              timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
+            });
+            liveRef.current.osc = osc;
+            oscPlots.forEach(({ p, i }) => {
+              const ls = osc.addLineSeries({ color: (p && p.color) || PINE_PALETTE[i % PINE_PALETTE.length], lineWidth: 2, priceLineVisible: false });
+              ls.setData(alignTail((p && p.values) || [], times));
+            });
+            try { osc.timeScale().fitContent(); } catch (e) {}
+          } catch (e) {}
+        }
+        if (cancelled) return;
+        setOscCount(oscPlots.length && oscRef.current ? oscPlots.length : 0);
+        setStatus('ok');
+      } catch (e) {
+        if (cancelled) return;
+        if (e && e.name === 'AbortError') return;
+        destroy();
+        setOscCount(0);
+        setStatus('error');
+      }
+    };
+    run();
+    return () => { cancelled = true; if (ctrl && ctrl.abort) { try { ctrl.abort(); } catch (e) {} } destroy(); };
+  }, [symbol, timeframe, height, lim, JSON.stringify(plots || []), JSON.stringify(markers || [])]);
+
+  const statusStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: COLORS.textTertiary, fontSize: 12 };
+  return React.createElement('div', null,
+    React.createElement('div', { ref: mainRef, style: { width: '100%', height: H, background: '#020617', borderRadius: 8 } },
+      status === 'loading' && React.createElement('div', { style: statusStyle }, 'Loading indicator chart…'),
+      status === 'empty' && React.createElement('div', { style: statusStyle }, 'No candle data — retry shortly'),
+      status === 'error' && React.createElement('div', { style: statusStyle }, 'Chart unavailable (candles or library failed)')
+    ),
+    React.createElement('div', { ref: oscRef, style: { width: '100%', height: 140, background: '#020617', borderRadius: 8, marginTop: 8, display: oscCount > 0 ? 'block' : 'none' } })
+  );
+}
+
+/* Pine input-grammar helpers (client mirror of agent_system/indicators/pine_parser).
+   GET /indicators returns only {id,title,version,created_at} — no input specs —
+   so PineBlock derives slider defs by parsing the uploaded source text and
+   caches them per indicator id for the session. */
+function pineSplitArgs(s) {
+  const out = []; let cur = ''; let depth = 0; let q = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) { cur += c; if (c === q) q = null; continue; }
+    if (c === '"' || c === "'") { q = c; cur += c; continue; }
+    if (c === '(') depth++;
+    if (c === ')') depth--;
+    if (c === ',' && depth === 0) { out.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  if (cur.trim() !== '') out.push(cur);
+  return out;
+}
+
+function pineBalanced(s, openIdx) {
+  let depth = 0; let q = null;
+  for (let i = openIdx; i < s.length; i++) {
+    const c = s[i];
+    if (q) { if (c === q) q = null; continue; }
+    if (c === '"' || c === "'") { q = c; continue; }
+    if (c === '(') depth++;
+    else if (c === ')') { depth--; if (depth === 0) return s.slice(openIdx + 1, i); }
+  }
+  return null;
+}
+
+function pineNum(s) {
+  const n = parseFloat(String(s).trim());
+  return isNaN(n) ? null : n;
+}
+
+function parsePineInputs(text) {
+  const src = String(text || '').split('\n').map(l => {
+    const i = l.indexOf('//');
+    return i < 0 ? l : l.slice(0, i);
+  }).join('\n');
+  const defs = [];
+  const re = /(\w+)\s*=\s*input\.(int|float|bool|source)\s*\(/gi;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const name = m[1];
+    const kind = m[2].toLowerCase();
+    const openIdx = src.indexOf('(', m.index + m[0].length - 1);
+    const inner = openIdx >= 0 ? pineBalanced(src, openIdx) : null;
+    if (inner == null) continue;
+    const args = pineSplitArgs(inner);
+    let def = kind === 'bool' ? false : (kind === 'source' ? 'close' : 0);
+    let title = name;
+    let min = null;
+    let max = null;
+    if (args.length) {
+      const raw = args[0].trim();
+      if (kind === 'bool') def = /^true$/i.test(raw);
+      else if (kind === 'source') def = raw.replace(/^["']|["']$/g, '') || 'close';
+      else { const n = pineNum(raw); if (n != null) def = (kind === 'int') ? Math.round(n) : n; }
+    }
+    for (let i = 1; i < args.length; i++) {
+      const km = args[i].trim().match(/^(\w+)\s*=\s*(.+)$/);
+      if (!km) continue;
+      const k = km[1].toLowerCase();
+      const v = km[2].trim();
+      if (k === 'title') title = v.replace(/^["']|["']$/g, '') || name;
+      else if (k === 'minval') min = pineNum(v);
+      else if (k === 'maxval') max = pineNum(v);
+    }
+    defs.push({ name, kind, def, title, min, max });
+  }
+  return defs;
+}
+
+function buildSeriesQuery(indId, symbol, timeframe, limit, values, defs) {
+  const q = [`symbol=${encodeURIComponent(toDeltaSymbol(symbol))}`, `timeframe=${encodeURIComponent(timeframe)}`, `limit=${encodeURIComponent(String(limit))}`];
+  (defs || []).forEach(d => {
+    if (!d || values == null || values[d.name] === undefined) return;
+    q.push(`${encodeURIComponent(d.name)}=${encodeURIComponent(String(values[d.name]))}`);
+  });
+  return `${API}/indicators/${encodeURIComponent(indId)}/series?${q.join('&')}`;
+}
+
+function PineBlock({ symbol }) {
+  const [list, setList] = useState([]);
+  const [activeId, setActiveId] = useState('');
+  const [defsCache, setDefsCache] = useState({});
+  const [values, setValues] = useState({});
+  const [plots, setPlots] = useState([]);
+  const [markers, setMarkers] = useState([]);
+  const [tf, setTf] = useState('1h');
+  const [uploadErrors, setUploadErrors] = useState([]);
+  const [seriesError, setSeriesError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [loadingSeries, setLoadingSeries] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const fileRef = useRef(null);
+  const abortRef = useRef(null);
+  const reqRef = useRef(0);
+  const LIMIT = 250;
+  const authHeaders = { 'Authorization': 'Bearer ' + BRIDGE_TOKEN };
+  const defs = defsCache[activeId] || [];
+  const activeTitle = (list.filter(x => x.id === activeId)[0] || {}).title || activeId;
+
+  const refreshList = async (selectId) => {
+    try {
+      const r = await fetch(`${API}/indicators`, { headers: authHeaders });
+      const d = await r.json();
+      const items = (d && d.indicators) || [];
+      setList(items);
+      if (selectId) setActiveId(selectId);
+      else if (items.length) setActiveId(prev => prev || items[0].id);
+    } catch (e) {}
+  };
+
+  useEffect(() => { refreshList(); }, []);
+
+  useEffect(() => {
+    if (!activeId) { setPlots([]); setMarkers([]); return; }
+    const timer = setTimeout(() => {
+      const run = async () => {
+        if (abortRef.current && abortRef.current.abort) { try { abortRef.current.abort(); } catch (e) {} }
+        const AC = typeof AbortController !== 'undefined' ? AbortController : null;
+        const ctrl = AC ? new AC() : null;
+        abortRef.current = ctrl;
+        const myReq = ++reqRef.current;
+        setLoadingSeries(true);
+        setSeriesError('');
+        try {
+          const r = await fetch(buildSeriesQuery(activeId, symbol, tf, LIMIT, values, defs), Object.assign({ headers: authHeaders }, ctrl ? { signal: ctrl.signal } : {}));
+          const d = await r.json();
+          if (reqRef.current !== myReq) return;
+          if (!r.ok) setSeriesError((d && d.error) || 'Series failed');
+          else { setPlots(d.plots || []); setMarkers(d.markers || []); }
+        } catch (e) {
+          if (e && e.name === 'AbortError') return;
+          if (reqRef.current === myReq) setSeriesError('Series fetch failed: ' + e.message);
+        }
+        if (reqRef.current === myReq) setLoadingSeries(false);
+      };
+      run();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [activeId, JSON.stringify(values), JSON.stringify(defs), tf, symbol]);
+
+  const uploadSource = async (text, name) => {
+    setUploading(true);
+    setUploadErrors([]);
+    setSeriesError('');
+    const parsed = parsePineInputs(text);
+    try {
+      const fd = new FormData();
+      fd.append('file', new Blob([text], { type: 'text/plain' }), name);
+      const r = await fetch(`${API}/indicators/upload`, { method: 'POST', headers: authHeaders, body: fd });
+      const d = await r.json();
+      if (!r.ok) { setSeriesError((d && d.error) || 'Upload failed'); }
+      else {
+        const id = d.id;
+        setUploadErrors(d.errors || []);
+        const init = {};
+        parsed.forEach(x => { init[x.name] = x.def; });
+        setDefsCache(prev => Object.assign({}, prev, { [id]: parsed }));
+        setValues(init);
+        setPlots([]);
+        setMarkers([]);
+        await refreshList(id);
+        if (fileRef.current) fileRef.current.value = '';
+      }
+    } catch (e) { setSeriesError('Upload failed: ' + e.message); }
+    setUploading(false);
+  };
+
+  const onPickFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    setFileName(f.name);
+    const ext = (String(f.name).split('.').pop() || '').toLowerCase();
+    if (ext !== 'pine' && ext !== 'pinescript') {
+      setUploadErrors([{ line: 0, code: 'EXTENSION', reason: 'Use a .pine or .pinescript file' }]);
+      return;
+    }
+    if (typeof FileReader === 'undefined') { setSeriesError('FileReader unavailable in this browser'); return; }
+    const rd = new FileReader();
+    rd.onload = () => uploadSource(String(rd.result || ''), f.name);
+    rd.onerror = () => setSeriesError('Could not read file');
+    rd.readAsText(f);
+  };
+
+  const onSelect = (e) => {
+    const id = e.target.value;
+    setActiveId(id);
+    const cached = defsCache[id] || [];
+    const init = {};
+    cached.forEach(x => { init[x.name] = x.def; });
+    setValues(init);
+    setUploadErrors([]);
+    setSeriesError('');
+  };
+
+  const onDelete = async () => {
+    if (!activeId) return;
+    try {
+      const r = await fetch(`${API}/indicators/${encodeURIComponent(activeId)}`, { method: 'DELETE', headers: authHeaders });
+      if (!r.ok) { setSeriesError('Delete failed'); return; }
+      const gone = activeId;
+      setDefsCache(prev => { const n = Object.assign({}, prev); delete n[gone]; return n; });
+      setActiveId('');
+      setPlots([]);
+      setMarkers([]);
+      setValues({});
+      setUploadErrors([]);
+      await refreshList();
+    } catch (e) { setSeriesError('Delete failed: ' + e.message); }
+  };
+
+  const renderInputControl = (d) => {
+    const v = values[d.name] !== undefined ? values[d.name] : d.def;
+    const set = (nv) => setValues(prev => Object.assign({}, prev, { [d.name]: nv }));
+    const labelStyle = { fontSize: 11, color: COLORS.textSecondary, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 150, flex: '1 1 150px' };
+    if (d.kind === 'bool') {
+      return React.createElement('label', { key: d.name, style: { fontSize: 11, color: COLORS.textSecondary, display: 'flex', alignItems: 'center', gap: 6 } },
+        React.createElement('input', { type: 'checkbox', checked: !!v, onChange: (e) => set(e.target.checked), style: { width: 16, height: 16, accentColor: COLORS.blue } }),
+        (d.title || d.name)
+      );
+    }
+    if (d.kind === 'source') {
+      return React.createElement('label', { key: d.name, style: labelStyle },
+        `${d.title || d.name} (source)`,
+        React.createElement('select', { value: v, onChange: (e) => set(e.target.value), style: { padding: '4px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 } },
+          PINE_SOURCE_OPTIONS.map(o => React.createElement('option', { key: o, value: o }, o))
+        )
+      );
+    }
+    if (d.min != null && d.max != null && d.max > d.min) {
+      const step = d.kind === 'int' ? 1 : (d.max - d.min) / 100;
+      return React.createElement('label', { key: d.name, style: labelStyle },
+        `${d.title || d.name}: ${v}`,
+        React.createElement('input', {
+          type: 'range', min: d.min, max: d.max, step,
+          value: v,
+          onChange: (e) => set(d.kind === 'int' ? Math.round(parseFloat(e.target.value)) : parseFloat(e.target.value)),
+          style: { width: '100%', accentColor: COLORS.blue },
+        })
+      );
+    }
+    return React.createElement('label', { key: d.name, style: labelStyle },
+      `${d.title || d.name} (${d.kind})`,
+      React.createElement('input', {
+        type: 'number', value: v,
+        onChange: (e) => set(d.kind === 'int' ? Math.round(parseFloat(e.target.value) || 0) : (parseFloat(e.target.value) || 0)),
+        style: { width: 110, padding: '4px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 },
+      })
+    );
+  };
+
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 } },
+      React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, fontFamily: "'Fira Code', monospace" } }, `PINE INDICATORS · ${toDeltaSymbol(symbol)}${loadingSeries ? ' · recomputing…' : ''}`),
+      React.createElement('div', { style: { display: 'flex', gap: 4 } }, PINE_TF_OPTIONS.map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t)))
+    ),
+    React.createElement('div', { style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 } },
+      React.createElement('input', { ref: fileRef, type: 'file', accept: '.pine,.pinescript', onChange: onPickFile, style: { fontSize: 12, color: COLORS.textSecondary, maxWidth: 260 } }),
+      uploading && React.createElement('span', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Uploading…'),
+      fileName && !uploading && React.createElement('span', { style: { fontSize: 11, color: COLORS.textTertiary } }, fileName),
+      React.createElement('select', {
+        value: activeId,
+        onChange: onSelect,
+        style: { padding: '5px 10px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12, minWidth: 180 },
+      },
+        React.createElement('option', { value: '' }, list.length ? 'Select indicator…' : 'No indicators yet'),
+        list.map(x => React.createElement('option', { key: x.id, value: x.id }, `${x.title || x.id}${x.version ? ' (v' + x.version + ')' : ''}`))
+      ),
+      activeId && React.createElement('button', { onClick: onDelete, style: { fontSize: 11, padding: '5px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.red, cursor: 'pointer' } }, 'Delete')
+    ),
+    uploadErrors.length > 0 && React.createElement('div', { style: { marginBottom: 10, padding: '8px 10px', borderRadius: 8, background: COLORS.amber + '14', border: `1px solid ${COLORS.amber}55` } },
+      React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.amber, marginBottom: 4 } }, `PARSE NOTES (${uploadErrors.length}) — stored, no silent mis-plot`),
+      uploadErrors.map((e, i) => React.createElement('div', { key: i, style: { fontSize: 11, color: COLORS.textSecondary, fontFamily: "'Fira Code', monospace" } }, `L${e.line} [${e.code}] ${e.reason}`))
+    ),
+    seriesError && React.createElement('div', { style: { marginBottom: 10, fontSize: 12, color: COLORS.red } }, seriesError),
+    defs.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10 } }, defs.map(renderInputControl)),
+    (defs.length === 0 && activeId) && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 10 } }, 'No tunable inputs known for this indicator (re-upload the .pine file to restore sliders).'),
+    activeId
+      ? React.createElement(IndicatorChart, { symbol, timeframe: tf, plots, markers, height: 300, limit: LIMIT })
+      : React.createElement('div', { style: { fontSize: 12, color: COLORS.textTertiary, padding: '18px 0', textAlign: 'center' } }, 'Upload a .pine / .pinescript file to render custom overlays here (TradingView chart above is unchanged).')
+  );
+}
+
 /* ============================ PAYOFF GRAPH ============================ */
 function PayoffGraph({ strategy, spot }) {
   const W = 320, H = 160, mid = H / 2;
@@ -2310,6 +2776,7 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
               React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 8, fontFamily: "'Fira Code', monospace" } }, toTradingViewSymbol(chartSymbol) + ' · powered by TradingView'),
               React.createElement(TradingViewWidget, { symbol: chartSymbol, height: 470 })
             ),
+            React.createElement(PineBlock, { symbol: chartSymbol }),
             React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 } },
               React.createElement(FlowPositions, { onNav: nav }),
               React.createElement(FlowSuggestions, { onNav: nav }),
