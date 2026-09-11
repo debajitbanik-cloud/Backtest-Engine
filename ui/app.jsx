@@ -3712,6 +3712,233 @@ function SettingsSchedulerSection() {
   );
 }
 
+/* ============================ SETTINGS HELPERS (TASK 11) ============================
+   UI-only settings sections. All values persist to localStorage (same as the
+   existing Account Keys section). No new bridge endpoints: Bridge Token rotation
+   would require touching the auth core (_check_auth / _AUTH_TOKEN comparison in
+   bridge/python_bridge.py, sourced from env BRIDGE_AUTH_TOKEN with no setter),
+   so the rotate button is a stub reporting "not yet wired". */
+function maskBridgeToken(t) {
+  const s = String(t || '');
+  if (s.length <= 8) return '••••••••';
+  return s.slice(0, 4) + '••••••••' + s.slice(-4);
+}
+
+function flattenSettingsBots() {
+  try {
+    const out = [];
+    Object.keys(BOTS || {}).forEach(cat => {
+      (BOTS[cat] || []).forEach(b => {
+        if (b && b.id && b.name) out.push({ cat, id: b.id, name: b.name });
+      });
+    });
+    return out;
+  } catch (e) { return []; }
+}
+
+/* Bridge Token: masked display + rotate stub (no backend — see note above). */
+function SettingsBridgeTokenSection() {
+  const [msg, setMsg] = useState(null);
+  const masked = maskBridgeToken(typeof BRIDGE_TOKEN !== 'undefined' ? BRIDGE_TOKEN : '');
+  const rotate = () => {
+    setMsg('Token rotation not yet wired — server source of truth is env BRIDGE_AUTH_TOKEN (no setter endpoint); auth core untouched.');
+  };
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 500 } },
+      React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary } }, 'UI uses a baked-in bridge token for auth headers. Server truth lives in BRIDGE_AUTH_TOKEN env — rotation is not yet wired end to end.'),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+        React.createElement('span', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Current token (masked):'),
+        React.createElement('code', { style: { fontSize: 12, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace', background: COLORS.bgElevated, padding: '6px 10px', borderRadius: 6, border: `1px solid ${COLORS.border}` } }, masked)
+      ),
+      React.createElement('div', null,
+        React.createElement('button', { onClick: rotate, style: { padding: '8px 14px', borderRadius: 8, background: 'transparent', border: `1px solid ${COLORS.amber}`, color: COLORS.amber, fontWeight: 700, fontSize: 12, cursor: 'pointer' } }, 'Rotate Token')
+      ),
+      msg && React.createElement('div', { style: { padding: '10px 12px', borderRadius: 6, background: COLORS.amber + '15', border: `1px solid ${COLORS.amber}`, color: COLORS.amber, fontSize: 12 } }, msg)
+    )
+  );
+}
+
+/* Bots: global risk cap + per-bot enable/disable (localStorage, UI-only). */
+function SettingsBotsSection() {
+  const [riskCap, setRiskCap] = useState('2');
+  const [disabledIds, setDisabledIds] = useState([]);
+  const [savedTick, setSavedTick] = useState(false);
+  useEffect(() => {
+    try {
+      const rc = localStorage.getItem('settings_global_risk_cap');
+      if (rc != null && rc !== '') setRiskCap(rc);
+      const raw = localStorage.getItem('settings_disabled_bots');
+      if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) setDisabledIds(arr); }
+    } catch (e) {}
+  }, []);
+  const persist = (rc, dis) => {
+    try {
+      localStorage.setItem('settings_global_risk_cap', String(rc));
+      localStorage.setItem('settings_disabled_bots', JSON.stringify(dis || []));
+    } catch (e) {}
+  };
+  const onRiskCap = (v) => {
+    setRiskCap(v);
+    const n = parseFloat(v);
+    if (!isNaN(n) && n > 0 && n <= 100) { persist(v, disabledIds); setSavedTick(true); setTimeout(() => setSavedTick(false), 1200); }
+  };
+  const toggleBot = (id) => {
+    const next = disabledIds.includes(id) ? disabledIds.filter(x => x !== id) : [...disabledIds, id];
+    setDisabledIds(next);
+    persist(riskCap, next);
+  };
+  const all = flattenSettingsBots();
+  const enabledCount = all.filter(b => !disabledIds.includes(b.id)).length;
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 500 } },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 600, color: COLORS.text, fontSize: 13 } }, 'Global Risk Cap (% per trade)'),
+          React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Soft cap applied by convention; enforced in trade sizing UI, not on the bridge.')
+        ),
+        React.createElement('input', { type: 'number', min: 0.1, max: 100, step: 0.5, value: riskCap, onChange: (e) => onRiskCap(e.target.value), style: { width: 90, padding: '8px 10px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: 'JetBrains Mono, monospace' } })
+      ),
+      savedTick && React.createElement('div', { style: { fontSize: 11, color: COLORS.green } }, 'Saved to localStorage'),
+      React.createElement('div', { style: { fontSize: 10, fontWeight: 700, color: COLORS.textTertiary, letterSpacing: 0.5 } }, 'PER-BOT ENABLE/DISABLE (' + enabledCount + '/' + all.length + ' ENABLED)'),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 240, overflowY: 'auto' } },
+        all.map(b => {
+          const off = disabledIds.includes(b.id);
+          return React.createElement('div', { key: b.id, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${off ? COLORS.border : COLORS.green + '44'}` } },
+            React.createElement('span', { style: { width: 8, height: 8, borderRadius: '50%', background: off ? COLORS.textTertiary : COLORS.green, flexShrink: 0 } }),
+            React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+              React.createElement('div', { style: { fontSize: 12, fontWeight: 600, color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, b.name),
+              React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, b.cat + ' · ' + b.id)
+            ),
+            React.createElement('span', { style: { fontSize: 10, fontWeight: 700, color: off ? COLORS.textTertiary : COLORS.green } }, off ? 'OFF' : 'ON'),
+            React.createElement('button', { onClick: () => toggleBot(b.id), style: { padding: '4px 10px', borderRadius: 5, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, fontSize: 10, cursor: 'pointer' } }, off ? 'Enable' : 'Disable')
+          );
+        })
+      )
+    )
+  );
+}
+
+/* Runtime: poll intervals, feed source, default cash (localStorage, UI-only). */
+function SettingsRuntimeSection() {
+  const [pollMarket, setPollMarket] = useState('10');
+  const [pollSched, setPollSched] = useState('30');
+  const [feed, setFeed] = useState('delta');
+  const [cash, setCash] = useState('10000');
+  useEffect(() => {
+    try {
+      const a = localStorage.getItem('settings_poll_market_s'); if (a) setPollMarket(a);
+      const b = localStorage.getItem('settings_poll_sched_s'); if (b) setPollSched(b);
+      const c = localStorage.getItem('settings_feed_source'); if (c) setFeed(c);
+      const d = localStorage.getItem('settings_default_cash'); if (d) setCash(d);
+    } catch (e) {}
+  }, []);
+  const save = (k, v) => { try { localStorage.setItem(k, String(v)); } catch (e) {} };
+  const numStyle = { width: 110, padding: '8px 10px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontFamily: 'JetBrains Mono, monospace' };
+  const rowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 500 };
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+      React.createElement('div', { style: rowStyle },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 600, color: COLORS.text, fontSize: 13 } }, 'Market Poll Interval (s)'),
+          React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'How often dashboard/market panels refresh')
+        ),
+        React.createElement('input', { type: 'number', min: 2, max: 300, value: pollMarket, onChange: (e) => { setPollMarket(e.target.value); save('settings_poll_market_s', e.target.value); }, style: numStyle })
+      ),
+      React.createElement('div', { style: rowStyle },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 600, color: COLORS.text, fontSize: 13 } }, 'Scheduler Poll Interval (s)'),
+          React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'How often scheduler job/run lists refresh')
+        ),
+        React.createElement('input', { type: 'number', min: 5, max: 600, value: pollSched, onChange: (e) => { setPollSched(e.target.value); save('settings_poll_sched_s', e.target.value); }, style: numStyle })
+      ),
+      React.createElement('div', { style: rowStyle },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 600, color: COLORS.text, fontSize: 13 } }, 'Feed Source'),
+          React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Preferred market-data provider')
+        ),
+        React.createElement('select', { value: feed, onChange: (e) => { setFeed(e.target.value); save('settings_feed_source', e.target.value); }, style: { width: 130, padding: '8px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13 } },
+          React.createElement('option', { value: 'delta' }, 'Delta'),
+          React.createElement('option', { value: 'ccxt' }, 'CCXT')
+        )
+      ),
+      React.createElement('div', { style: rowStyle },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 600, color: COLORS.text, fontSize: 13 } }, 'Default Cash (USD)'),
+          React.createElement('div', { style: { fontSize: 12, color: COLORS.textSecondary } }, 'Starting cash for new backtests')
+        ),
+        React.createElement('input', { type: 'number', min: 100, step: 100, value: cash, onChange: (e) => { setCash(e.target.value); save('settings_default_cash', e.target.value); }, style: numStyle })
+      )
+    )
+  );
+}
+
+/* Scheduling defaults (localStorage) — job list below reads GET /scheduler/jobs. */
+function SettingsSchedulingDefaults() {
+  const [cadence, setCadence] = useState('@weekly');
+  const [metric, setMetric] = useState('sharpe');
+  const [maxJobs, setMaxJobs] = useState('3');
+  useEffect(() => {
+    try {
+      const a = localStorage.getItem('settings_sched_default_cadence'); if (a) setCadence(a);
+      const b = localStorage.getItem('settings_sched_default_metric'); if (b) setMetric(b);
+      const c = localStorage.getItem('settings_sched_max_jobs'); if (c) setMaxJobs(c);
+    } catch (e) {}
+  }, []);
+  const save = (k, v) => { try { localStorage.setItem(k, String(v)); } catch (e) {} };
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, maxWidth: 600 } },
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'DEFAULT CADENCE'),
+        React.createElement('select', { value: cadence, onChange: (e) => { setCadence(e.target.value); save('settings_sched_default_cadence', e.target.value); }, style: { width: '100%', padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 } },
+          (typeof CADENCE_OPTIONS !== 'undefined' ? CADENCE_OPTIONS.filter(c => c.value !== 'off' && c.value !== 'custom') : [{ value: '@hourly', label: '@hourly' }, { value: '@daily', label: '@daily' }, { value: '@weekly', label: '@weekly' }]).map(c => React.createElement('option', { key: c.value, value: c.value }, c.label))
+        )
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'DEFAULT METRIC'),
+        React.createElement('select', { value: metric, onChange: (e) => { setMetric(e.target.value); save('settings_sched_default_metric', e.target.value); }, style: { width: '100%', padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 } },
+          (typeof METRIC_OPTIONS !== 'undefined' ? METRIC_OPTIONS : [{ value: 'sharpe', label: 'Sharpe' }, { value: 'total_return_pct', label: 'Return %' }, { value: 'profit_factor', label: 'Profit Factor' }]).map(m => React.createElement('option', { key: m.value, value: m.value }, m.label))
+        )
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'MAX CONCURRENT JOBS'),
+        React.createElement('input', { type: 'number', min: 1, max: 20, value: maxJobs, onChange: (e) => { setMaxJobs(e.target.value); save('settings_sched_max_jobs', e.target.value); }, style: { width: '100%', padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' } })
+      )
+    ),
+    React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginTop: 8 } }, 'Defaults apply when creating jobs from the Bots tab. Job list below reads GET /scheduler/jobs.')
+  );
+}
+
+/* Notifications: Telegram stub — DISABLED, no backend calls. */
+function SettingsNotificationsSection() {
+  const [botToken, setBotToken] = useState('');
+  const [chatId, setChatId] = useState('');
+  useEffect(() => {
+    try {
+      const a = localStorage.getItem('settings_telegram_bot_token'); if (a) setBotToken(a);
+      const b = localStorage.getItem('settings_telegram_chat_id'); if (b) setChatId(b);
+    } catch (e) {}
+  }, []);
+  const disStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.textTertiary, fontSize: 13, fontFamily: 'JetBrains Mono, monospace', opacity: 0.6 };
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'grid', gap: 10, maxWidth: 500 } },
+      React.createElement('div', { style: { display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: COLORS.amber, background: COLORS.amber + '15', border: `1px solid ${COLORS.amber}`, borderRadius: 4, padding: '3px 8px', width: 'fit-content' } }, 'DISABLED — NO BACKEND'),
+      React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary } }, 'Telegram stub only (no backend delivery). Values stay in localStorage if entered.'),
+      React.createElement('div', null,
+        React.createElement('label', { style: { display: 'block', fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'Telegram Bot Token'),
+        React.createElement('input', { type: 'password', disabled: true, value: botToken, onChange: (e) => setBotToken(e.target.value), placeholder: 'Disabled — stub only', style: disStyle })
+      ),
+      React.createElement('div', null,
+        React.createElement('label', { style: { display: 'block', fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'Telegram Chat ID'),
+        React.createElement('input', { type: 'text', disabled: true, value: chatId, onChange: (e) => setChatId(e.target.value), placeholder: 'Disabled — stub only', style: disStyle })
+      ),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, opacity: 0.6 } },
+        React.createElement('input', { type: 'checkbox', disabled: true, checked: false, onChange: () => {}, style: { width: 18, height: 18, accentColor: COLORS.blue } }),
+        React.createElement('label', { style: { fontSize: 12, color: COLORS.textTertiary } }, 'Enable Telegram alerts (disabled)')
+      )
+    )
+  );
+}
+
 /* ============================ SETTINGS VIEW ============================ */
 function SettingsView({ health }) {
   const [deltaKey, setDeltaKey] = useState('');
@@ -3720,6 +3947,21 @@ function SettingsView({ health }) {
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [btClearMsg, setBtClearMsg] = useState(null);
+
+  const clearBacktestCache = () => {
+    try {
+      let n = 0;
+      const drop = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && /^(backtest|bt_|bot_backtest|bot-backtest)/i.test(k)) drop.push(k);
+      }
+      drop.forEach(k => { localStorage.removeItem(k); n++; });
+      setBtClearMsg(n > 0 ? ('Cleared ' + n + ' local backtest-cache key(s).') : 'No local backtest-cache keys found.');
+    } catch (e) { setBtClearMsg('Backtest-cache clear failed: ' + (e && e.message ? e.message : e)); }
+    setTimeout(() => setBtClearMsg(null), 2500);
+  };
 
   useEffect(() => {
     try {
@@ -3818,6 +4060,12 @@ function SettingsView({ health }) {
         )
       )
     ),
+    React.createElement(Section, { title: 'Bridge Token' },
+      React.createElement(SettingsBridgeTokenSection, null)
+    ),
+    React.createElement(Section, { title: 'Bots' },
+      React.createElement(SettingsBotsSection, null)
+    ),
     React.createElement(Section, { title: 'Trading Preferences' },
       React.createElement(Card, { pad: 16 },
         React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
@@ -3850,8 +4098,22 @@ function SettingsView({ health }) {
         )
       )
     ),
+    React.createElement(Section, { title: 'Runtime' },
+      React.createElement(SettingsRuntimeSection, null)
+    ),
     React.createElement(Section, { title: 'Scheduling' },
-      React.createElement(SettingsSchedulerSection, null)
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+        React.createElement(SettingsSchedulingDefaults, null),
+        React.createElement(SettingsSchedulerSection, null)
+      )
+    ),
+    React.createElement(Section, { title: 'Notifications' },
+      React.createElement(SettingsNotificationsSection, null)
+    ),
+    React.createElement(Section, { title: 'Appearance' },
+      React.createElement(Card, { pad: 12 },
+        React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 8 } }, 'See UI Preferences below — same controls, kept for compatibility.')
+      )
     ),
     React.createElement(Section, { title: 'UI Preferences' },
       React.createElement(Card, { pad: 16 },
@@ -3890,7 +4152,12 @@ function SettingsView({ health }) {
     React.createElement(Section, { title: 'Data & Cache' },
       React.createElement(Card, { pad: 16 },
         React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
-          React.createElement('button', { onClick: () => { try { localStorage.clear(); setDeltaKey(''); setDeltaSecret(''); setTestnet(false); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (e) {} }, style: { padding: '10px 16px', borderRadius: 8, background: COLORS.red + '22', border: `1px solid ${COLORS.red}`, color: COLORS.red, fontWeight: 700, cursor: 'pointer', width: 'fit-content' } }, 'Clear All Local Storage')
+          React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+            React.createElement('button', { onClick: clearBacktestCache, style: { padding: '10px 16px', borderRadius: 8, background: COLORS.amber + '22', border: `1px solid ${COLORS.amber}`, color: COLORS.amber, fontWeight: 700, cursor: 'pointer', width: 'fit-content' } }, 'Clear Backtest Cache (local)'),
+            React.createElement('button', { onClick: () => { try { localStorage.clear(); setDeltaKey(''); setDeltaSecret(''); setTestnet(false); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (e) {} }, style: { padding: '10px 16px', borderRadius: 8, background: COLORS.red + '22', border: `1px solid ${COLORS.red}`, color: COLORS.red, fontWeight: 700, cursor: 'pointer', width: 'fit-content' } }, 'Clear All Local Storage')
+          ),
+          React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Backtest-cache clear removes local keys (backtest*, bt_*, bot_backtest*). No bridge endpoint exists for server backtest cache — local only.'),
+          btClearMsg && React.createElement('div', { style: { fontSize: 12, color: COLORS.green } }, btClearMsg)
         )
       )
     )
