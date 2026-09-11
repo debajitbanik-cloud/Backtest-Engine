@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-import os
 from pathlib import Path
 
 # Add agent_system to path for imports
@@ -25,13 +24,17 @@ from aiohttp.web import middleware
 @middleware
 async def cors_middleware(request: web.Request, handler):
     """Add CORS headers for cross-origin UI requests."""
+    _allowed = {'http://localhost:3000', 'http://127.0.0.1:3000'}
     # Handle OPTIONS preflight
     if request.method == 'OPTIONS':
-        return web.Response(status=204, headers={
-            'Access-Control-Allow-Origin': request.headers.get('Origin', ''),
+        _origin = request.headers.get('Origin', '')
+        _headers = {
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        })
+        }
+        if _origin in _allowed:
+            _headers['Access-Control-Allow-Origin'] = _origin
+        return web.Response(status=204, headers=_headers)
     response = await handler(request)
     if response is None:
         response = web.Response(status=500)
@@ -63,7 +66,6 @@ def _check_auth(request: web.Request) -> bool:
     auth = request.headers.get('Authorization', '')
     return auth == f'Bearer {_AUTH_TOKEN}'
 
-from agent_system.core.trade_journal import trade_journal as _journal
 import re as _re
 _SYMBOL_RE = _re.compile(r'^[A-Z0-9]{1,20}$')
 _TIMEFRAME_RE = _re.compile(r'^(1m|5m|15m|1h|4h|1d)$')
@@ -107,8 +109,12 @@ from backtest.agentm_candle import (
 
 @dataclass
 class BridgeConfig:
-    """Configuration for the bridge server."""
-    host: str = "127.0.0.1"
+    """Configuration for the bridge server.
+
+    host reads BRIDGE_HOST env (fallback '127.0.0.1' — unchanged default).
+    Set BRIDGE_HOST=0.0.0.0 when running containerised (Caddy/compose).
+    """
+    host: str = _os.environ.get('BRIDGE_HOST', '127.0.0.1')
     port: int = 8088
     shared_data_dir: str = "./data/shared"
     enable_events_stream: bool = True
@@ -228,6 +234,7 @@ class PythonBridge:
         # ── Scheduler endpoints (auth enforced) ──────────────────────────────
         self.app.router.add_get('/scheduler/jobs', self.scheduler_jobs_list)
         self.app.router.add_post('/scheduler/jobs', self.scheduler_jobs_create)
+        self.app.router.add_delete('/scheduler/jobs/{job_id}', self.scheduler_jobs_delete)
         self.app.router.add_get('/scheduler/runs', self.scheduler_runs_list)
         self.app.router.add_post('/scheduler/jobs/{job_id}/adopt', self.scheduler_job_adopt)
         self.app.router.add_post('/scheduler/jobs/{job_id}/reject', self.scheduler_job_reject)
@@ -249,7 +256,10 @@ class PythonBridge:
         
         self._status["running"] = True
         print(f"Python bridge server running at http://{self.config.host}:{self.config.port}")
-        print(f"Bridge auth token: {_AUTH_TOKEN}")
+        if _env_token:
+            print("Bridge auth token loaded from environment")
+        else:
+            print("Bridge auth token generated ephemeral — set BRIDGE_AUTH_TOKEN to persist")
     
     async def _subscribe_to_events(self) -> None:
         """Subscribe to relevant events."""
@@ -647,7 +657,7 @@ class PythonBridge:
             params['end'] = end
         url = f'{delta_client.rest_base}/v2/history/candles?{_urlencode(params)}'
         try:
-            connector = _aiohttp.TCPConnector(family=_sock.AF_INET, ssl=False)
+            connector = _aiohttp.TCPConnector(family=_sock.AF_INET)
             async with _aiohttp.ClientSession(connector=connector) as session:
                 async with session.get(url, timeout=_aiohttp.ClientTimeout(total=15)) as resp:
                     data = await resp.json()
@@ -684,7 +694,7 @@ class PythonBridge:
         cparams['end'] = str(now)
         url = f'{delta_client.rest_base}/v2/history/candles?{_urlencode(cparams)}'
         try:
-            connector = _aiohttp.TCPConnector(family=_sock.AF_INET, ssl=False)
+            connector = _aiohttp.TCPConnector(family=_sock.AF_INET)
             async with _aiohttp.ClientSession(connector=connector) as session:
                 async with session.get(url, timeout=_aiohttp.ClientTimeout(total=20)) as resp:
                     cdata = await resp.json()
@@ -847,7 +857,7 @@ class PythonBridge:
             'start': str(now - (tf_sec.get(timeframe, 3600) * limit)), 'end': str(now),
         }
         url = f'{delta_client.rest_base}/v2/history/candles?{_urlencode(cparams)}'
-        connector = _aiohttp.TCPConnector(family=_sock.AF_INET, ssl=False)
+        connector = _aiohttp.TCPConnector(family=_sock.AF_INET)
         async with _aiohttp.ClientSession(connector=connector) as session:
             async with session.get(url, timeout=_aiohttp.ClientTimeout(total=20)) as resp:
                 cdata = await resp.json()
@@ -2233,7 +2243,7 @@ class PythonBridge:
         # In a full implementation, this would spawn a background task
         # For now, return success with a mock PID
         import os, time
-        mock_pid = os.getpid() + hash(bot_id) % 10000
+        mock_pid = _os.getpid() + hash(bot_id) % 10000
         return web.json_response({
             'status': 'ok',
             'bot_id': bot_id,
@@ -2296,6 +2306,23 @@ class PythonBridge:
         bot_id = body.get('bot_id')
         if not bot_id:
             return web.json_response({'error': 'bot_id required'}, status=400)
+        if bot_id not in _STRATEGIES:
+            return web.json_response({'error': f'Unknown bot_id {bot_id}'}, status=400)
+        metric = body.get('metric', 'sharpe')
+        if metric not in ('sharpe', 'total_return_pct', 'profit_factor'):
+            return web.json_response({'error': f'Unknown metric {metric}'}, status=400)
+        grid = body.get('grid') or {}
+        try:
+            from agent_system.scheduler.optimizer import build_grid as _build_grid
+            _built = _build_grid(grid)
+            _total = 1
+            for _v in _built.values():
+                _total *= len(_v)
+            if _total > 500:
+                return web.json_response(
+                    {'error': f'Grid too large ({_total} combos > MAX_COMBOS=500)'}, status=400)
+        except ValueError as e:
+            return web.json_response({'error': str(e)}, status=400)
         try:
             from agent_system.scheduler.store import SchedulerStore
             store = SchedulerStore()
@@ -2303,7 +2330,7 @@ class PythonBridge:
                 bot_id=bot_id,
                 kind=body.get('kind', 'backtest'),
                 cadence_cron=body.get('cadence_cron', '@weekly'),
-                metric=body.get('metric', 'sharpe'),
+                metric=metric,
                 grid=body.get('grid'),
                 auto_adopt=bool(body.get('auto_adopt', False)),
                 user_id=body.get('user_id', 'default'),
@@ -2311,6 +2338,21 @@ class PythonBridge:
             return web.json_response({'job': job})
         except Exception as e:
             return web.json_response({'error': str(e)}, status=400)
+
+    async def scheduler_jobs_delete(self, request: web.Request) -> web.Response:
+        """Delete a scheduler job (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        job_id = request.match_info.get('job_id', '')
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            ok = store.delete_job(job_id)
+            if not ok:
+                return web.json_response({'error': 'Job not found'}, status=404)
+            return web.json_response({'deleted': True, 'job_id': job_id})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
 
     async def scheduler_runs_list(self, request: web.Request) -> web.Response:
         """List scheduler runs, optionally filtered by job_id (auth required)."""
@@ -2459,6 +2501,13 @@ class PythonBridge:
             ir = parse_pine(code)
         except Exception as e:
             return web.json_response({'error': f'Parse failed: {e}'}, status=422)
+        try:
+            _base = Path(self.indicators_dir)
+            _count = sum(1 for _c in _base.iterdir() if _c.is_dir()) if _base.exists() else 0
+        except Exception:
+            _count = 0
+        if _count >= 20:
+            return web.json_response({'error': 'Indicator store full (max 20 stored indicators)'}, status=400)
         import secrets as _sec
         ind_id = _sec.token_hex(8)
         indir = Path(self.indicators_dir) / ind_id

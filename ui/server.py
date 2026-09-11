@@ -14,8 +14,11 @@ from aiohttp import web
 BACKEND = os.environ.get('BRIDGE_URL', 'http://127.0.0.1:8088')
 API_PREFIXES = (
     '/delta', '/journal', '/events', '/analytics', '/backtest', '/bot',
-    '/calendar', '/strategies', '/market', '/metrics', '/trading',
+    '/calendar', '/strategies', '/strategy', '/market', '/metrics', '/trading',
     '/health', '/status', '/signals',
+    '/scheduler', '/indicators', '/xau', '/ccxt', '/options', '/execution',
+    '/deploy', '/agentm', '/backtrader', '/command', '/debug',
+    '/data', '/recommendations', '/analysis',
 )
 HOP_BY_HOP = {'host', 'content-length', 'transfer-encoding', 'connection'}
 
@@ -44,12 +47,23 @@ async def proxy_api(request: web.Request) -> web.StreamResponse:
                                   'message': f'Backend {BACKEND} is down'}, status=502)
 
 
+ALLOWED_STATIC_EXTS = frozenset({
+    '.html', '.js', '.jsx', '.css', '.json', '.png', '.svg', '.ico',
+    '.map', '.txt', '.webmanifest',
+})
+
+
 async def serve_ui(request: web.Request) -> web.Response:
-    """Serve UI files."""
+    """Serve UI files (extension-allowlisted; anything else → 404)."""
     file_path = request.match_info.get('path', 'index.html')
     ui_dir = Path(__file__).parent
     target = (ui_dir / file_path).resolve()
-    
+
+    # Block non-allowlisted extensions (e.g. server.py source). Extensionless
+    # SPA paths still fall through to index.html below.
+    if Path(file_path).suffix.lower() not in ALLOWED_STATIC_EXTS and Path(file_path).suffix != '':
+        return web.Response(status=404, text='Not found')
+
     if not target.is_relative_to(ui_dir.resolve()) or not target.exists() or not target.is_file():
         target = ui_dir / 'index.html'
     
@@ -84,13 +98,20 @@ def create_ui_app() -> web.Application:
 
 
 async def start_ui_server(port: int = 3000):
-    """Start UI server."""
+    """Start UI server.
+
+    Bind host reads UI_HOST env (fallback '127.0.0.1' — unchanged default).
+    Set UI_HOST=0.0.0.0 when running containerised (Caddy/compose).
+    """
     app = create_ui_app()
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '127.0.0.1', port)
+    host = os.environ.get('UI_HOST', '127.0.0.1')
+    site = web.TCPSite(runner, host, port)
     await site.start()
-    print(f"Admin UI running at http://127.0.0.1:{port}")
+    print(f"Admin UI running at http://{host}:{port}")
+    # Log effective bridge backend (no secrets — BACKEND holds no auth token).
+    print(f"Proxy backend BACKEND={BACKEND}")
     return runner
 
 

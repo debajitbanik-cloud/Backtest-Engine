@@ -16,7 +16,7 @@ scrape_configs:
 
   - job_name: 'trading-app'
     static_configs:
-      - targets: ['trading-app:8080']
+      - targets: ['trading-app:8088']
     metrics_path: '/metrics'
 
   - job_name: 'postgres'

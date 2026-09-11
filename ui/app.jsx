@@ -495,48 +495,6 @@ function Metric({ label, value, sub, color, tilt }) {
   );
 }
 
-/* ============================ LIGHTWEIGHT CHART ============================ */
-function PriceChart({ symbol, timeframe, height }) {
-  const containerRef = useRef(null);
-  const chartRef = useRef(null);
-  const [loaded, setLoaded] = useState(false);
-  const [tf, setTf] = useState(timeframe || '1h');
-  useEffect(() => {
-    if (loaded || !containerRef.current) return;
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
-    script.onload = () => {
-      const LC = window.LightweightCharts;
-      const chart = LC.createChart(containerRef.current, {
-        width: containerRef.current.clientWidth, height: height || 380,
-        layout: { background: { color: '#020617' }, textColor: '#F8FAFC' },
-        grid: { vertLines: { color: '#334155' }, horzLines: { color: '#334155' } },
-        crosshair: { mode: LC.CrosshairMode.Normal },
-        rightPriceScale: { borderColor: '#334155' },
-        timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
-      });
-      const series = chart.addCandlestickSeries({ upColor: '#22C55E', downColor: '#EF4444', borderUpColor: '#22C55E', borderDownColor: '#EF4444', wickUpColor: '#22C55E', wickDownColor: '#EF4444' });
-      chartRef.current = { chart, series };
-      setLoaded(true);
-      const now = Math.floor(Date.now() / 1000);
-      const tfSec = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 };
-      const start = now - (tfSec[tf] || 3600) * 250;
-      fetch(`${API}/delta/candles?symbol=${toDeltaSymbol(symbol)}&resolution=${tf}&start=${start}&end=${now}&limit=250`)
-        .then(r => r.json()).then(d => { if (d.result) { series.setData(d.result.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close }))); chart.timeScale().fitContent(); } });
-    };
-    document.head.appendChild(script);
-    return () => { if (chartRef.current) chartRef.current.chart.remove(); };
-  }, [symbol, tf, height]);
-  return React.createElement('div', null,
-    React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 8 } },
-      ['1m', '5m', '15m', '1h', '4h', '1d'].map(t => React.createElement(Tab, { key: t, small: true, active: tf === t, onClick: () => setTf(t) }, t))
-    ),
-    React.createElement('div', { ref: containerRef, style: { width: '100%', height: height || 380, background: '#020617', borderRadius: 8 } },
-      !loaded && React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: COLORS.textTertiary } }, 'Loading chart...')
-    )
-  );
-}
-
 /* ============================ TRADINGVIEW ADVANCED CHART ============================ */
 function TradingViewWidget({ symbol, timeframe, height }) {
   const containerRef = useRef(null);
@@ -568,7 +526,7 @@ function TradingViewWidget({ symbol, timeframe, height }) {
     script.type = 'text/javascript';
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     script.async = true;
-    script.innerHTML = JSON.stringify(options);
+    script.textContent = JSON.stringify(options);
     el.appendChild(script);
     return () => { el.innerHTML = ''; };
   }, [tvSymbol, iv]);
@@ -3912,17 +3870,11 @@ function SettingsSchedulingDefaults() {
 function SettingsNotificationsSection() {
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
-  useEffect(() => {
-    try {
-      const a = localStorage.getItem('settings_telegram_bot_token'); if (a) setBotToken(a);
-      const b = localStorage.getItem('settings_telegram_chat_id'); if (b) setChatId(b);
-    } catch (e) {}
-  }, []);
   const disStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.textTertiary, fontSize: 13, fontFamily: 'JetBrains Mono, monospace', opacity: 0.6 };
   return React.createElement(Card, { pad: 16 },
     React.createElement('div', { style: { display: 'grid', gap: 10, maxWidth: 500 } },
       React.createElement('div', { style: { display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: COLORS.amber, background: COLORS.amber + '15', border: `1px solid ${COLORS.amber}`, borderRadius: 4, padding: '3px 8px', width: 'fit-content' } }, 'DISABLED — NO BACKEND'),
-      React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary } }, 'Telegram stub only (no backend delivery). Values stay in localStorage if entered.'),
+      React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary } }, 'Telegram stub only (no backend delivery). Nothing is stored — do not enter real credentials.'),
       React.createElement('div', null,
         React.createElement('label', { style: { display: 'block', fontSize: 11, color: COLORS.textTertiary, marginBottom: 4 } }, 'Telegram Bot Token'),
         React.createElement('input', { type: 'password', disabled: true, value: botToken, onChange: (e) => setBotToken(e.target.value), placeholder: 'Disabled — stub only', style: disStyle })

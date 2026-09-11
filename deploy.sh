@@ -63,7 +63,7 @@ start_trading_system() {
         python3 -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r agent_system/requirements.txt
     else
         source venv/bin/activate
     fi
@@ -81,7 +81,7 @@ start_trading_system() {
     # The metrics are started within the trading system
     
     # Start FastAPI execution endpoint
-    echo -e "${YELLOW}Starting execution API on port 8080...${NC}"
+    echo -e "${YELLOW}Starting execution API on port 8088...${NC}"
     # This would be started separately or integrated
 }
 
@@ -123,12 +123,12 @@ show_status() {
     docker-compose ps
     echo ""
     echo "Access points:"
-    echo "  API Gateway:    http://localhost:8080"
+    echo "  API Gateway:    http://localhost:8088"
     echo "  Admin UI:       http://localhost:3000"
-    echo "  Grafana:        http://localhost:3001 (admin/admin)"
+    echo "  Grafana:        http://localhost:3101 (admin/admin)"
     echo "  Prometheus:     http://localhost:9090"
     echo "  MinIO:          http://localhost:9001 (minioadmin/changeme)"
-    echo "  Trading System: ws://localhost:8080/ws (WebSocket)"
+    echo "  Trading System: ws://localhost:8088/ws (WebSocket)"
     echo ""
     echo "Running services:"
     docker-compose ps
