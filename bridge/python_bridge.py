@@ -234,6 +234,7 @@ class PythonBridge:
         # ── Indicator endpoints (auth enforced) ──────────────────────────────
         self.app.router.add_post('/indicators/upload', self.indicators_upload)
         self.app.router.add_get('/indicators', self.indicators_list)
+        self.app.router.add_get('/indicators/{ind_id}', self.indicators_get)
         self.app.router.add_get('/indicators/{ind_id}/series', self.indicators_series)
         self.app.router.add_delete('/indicators/{ind_id}', self.indicators_delete)
     
@@ -2506,6 +2507,25 @@ class PythonBridge:
             return web.json_response({'indicators': items, 'count': len(items)})
         except Exception as e:
             return web.json_response({'error': str(e)}, status=500)
+
+    async def indicators_get(self, request: web.Request) -> web.Response:
+        """Return the stored spec for one indicator (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        ind_id = request.match_info.get('ind_id', '')
+        spec = self._load_indicator_spec(ind_id)
+        if spec is None:
+            return web.json_response({'error': 'Indicator not found'}, status=404)
+        return web.json_response({
+            'id': spec.get('id', ind_id),
+            'title': spec.get('title'),
+            'version': spec.get('version'),
+            'created_at': spec.get('created_at'),
+            'filename': spec.get('filename'),
+            'meta': spec.get('meta', {}),
+            'inputs': spec.get('inputs', []),
+            'plots': spec.get('plots', []),
+        })
 
     async def indicators_series(self, request: web.Request) -> web.Response:
         """Evaluate a stored indicator over fetched OHLCV (auth required)."""

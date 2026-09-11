@@ -844,7 +844,26 @@ function buildSeriesQuery(indId, symbol, timeframe, limit, values, defs) {
   return `${API}/indicators/${encodeURIComponent(indId)}/series?${q.join('&')}`;
 }
 
-function PineBlock({ symbol }) {
+function specInputsToDefs(inputs) {
+  return (inputs || []).map(inp => {
+    const rawDef = inp.def !== undefined ? inp.def : inp.default;
+    const kind = (inp.kind || 'float').toLowerCase();
+    let def = rawDef;
+    if (def === undefined || def === null) def = kind === 'bool' ? false : (kind === 'source' ? 'close' : 0);
+    if (kind === 'int' && typeof def === 'number') def = Math.round(def);
+    if (kind === 'source' && typeof def !== 'string') def = 'close';
+    return {
+      name: inp.name,
+      kind,
+      def,
+      title: inp.title || inp.name,
+      min: inp.min !== undefined ? inp.min : (inp.minval !== undefined ? inp.minval : null),
+      max: inp.max !== undefined ? inp.max : (inp.maxval !== undefined ? inp.maxval : null),
+    };
+  }).filter(d => d && d.name);
+}
+
+function PineBlock({ symbol, compact }) {
   const [list, setList] = useState([]);
   const [activeId, setActiveId] = useState('');
   const [defsCache, setDefsCache] = useState({});
@@ -860,7 +879,9 @@ function PineBlock({ symbol }) {
   const fileRef = useRef(null);
   const abortRef = useRef(null);
   const reqRef = useRef(0);
+  const specReqRef = useRef(0);
   const LIMIT = 250;
+  const CHART_H = compact ? 180 : 300;
   const authHeaders = { 'Authorization': 'Bearer ' + BRIDGE_TOKEN };
   const defs = defsCache[activeId] || [];
   const activeTitle = (list.filter(x => x.id === activeId)[0] || {}).title || activeId;
@@ -877,6 +898,33 @@ function PineBlock({ symbol }) {
   };
 
   useEffect(() => { refreshList(); }, []);
+
+  useEffect(() => {
+    if (!activeId) return;
+    if (defsCache[activeId]) return;
+    const myReq = ++specReqRef.current;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/indicators/${encodeURIComponent(activeId)}`, { headers: authHeaders });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (specReqRef.current !== myReq) return;
+        const normalized = specInputsToDefs(d.inputs || []);
+        setDefsCache(prev => {
+          if (prev[activeId]) return prev;
+          return Object.assign({}, prev, { [activeId]: normalized });
+        });
+        setValues(prev => {
+          const hasUserEdits = Object.keys(prev || {}).length > 0;
+          if (hasUserEdits) return prev;
+          const init = {};
+          normalized.forEach(x => { init[x.name] = x.def; });
+          return init;
+        });
+      } catch (e) {}
+    };
+    load();
+  }, [activeId]);
 
   useEffect(() => {
     if (!activeId) { setPlots([]); setMarkers([]); return; }
@@ -952,12 +1000,33 @@ function PineBlock({ symbol }) {
   const onSelect = (e) => {
     const id = e.target.value;
     setActiveId(id);
-    const cached = defsCache[id] || [];
-    const init = {};
-    cached.forEach(x => { init[x.name] = x.def; });
-    setValues(init);
+    const cached = defsCache[id];
+    if (cached) {
+      const init = {};
+      cached.forEach(x => { init[x.name] = x.def; });
+      setValues(init);
+    } else {
+      setValues({});
+    }
     setUploadErrors([]);
     setSeriesError('');
+    if (id && !defsCache[id]) {
+      const myReq = ++specReqRef.current;
+      fetch(`${API}/indicators/${encodeURIComponent(id)}`, { headers: authHeaders })
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => {
+          if (!d || specReqRef.current !== myReq) return;
+          const normalized = specInputsToDefs(d.inputs || []);
+          setDefsCache(prev => (prev[id] ? prev : Object.assign({}, prev, { [id]: normalized })));
+          setValues(prev => {
+            if (Object.keys(prev || {}).length > 0) return prev;
+            const init = {};
+            normalized.forEach(x => { init[x.name] = x.def; });
+            return init;
+          });
+        })
+        .catch(() => {});
+    }
   };
 
   const onDelete = async () => {
@@ -1041,10 +1110,138 @@ function PineBlock({ symbol }) {
     ),
     seriesError && React.createElement('div', { style: { marginBottom: 10, fontSize: 12, color: COLORS.red } }, seriesError),
     defs.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10 } }, defs.map(renderInputControl)),
-    (defs.length === 0 && activeId) && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 10 } }, 'No tunable inputs known for this indicator (re-upload the .pine file to restore sliders).'),
+    (defs.length === 0 && activeId) && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 10 } }, 'No tunable inputs for this indicator.'),
     activeId
-      ? React.createElement(IndicatorChart, { symbol, timeframe: tf, plots, markers, height: 300, limit: LIMIT })
+      ? React.createElement(IndicatorChart, { symbol, timeframe: tf, plots, markers, height: CHART_H, limit: LIMIT })
       : React.createElement('div', { style: { fontSize: 12, color: COLORS.textTertiary, padding: '18px 0', textAlign: 'center' } }, 'Upload a .pine / .pinescript file to render custom overlays here (TradingView chart above is unchanged).')
+  );
+}
+
+/* ============================ BOT PERFORMANCE (TASK 10) ============================
+   Homepage leaderboard below the chart. Reads Task 3 endpoint
+   GET /backtest/bot/<bot_id>?limit=1 (auth required, verified in
+   bridge/python_bridge.py) for every known bot, ranks by latest
+   total_return_pct, shows return/win-rate + one-click backtest via the
+   existing POST /backtest/run with bot_id (no new API). Relative URLs only. */
+function flattenBacktestBots() {
+  const out = [];
+  Object.keys(BOTS || {}).forEach(cat => {
+    if (cat === 'trade_logic') return;
+    (BOTS[cat] || []).forEach(b => { if (b && b.id) out.push(b); });
+  });
+  return out;
+}
+
+function botBacktestAsset(bot) {
+  const raw = String((bot && bot.assets && bot.assets[0]) || 'BTCUSD').toUpperCase();
+  const base = raw.replace(/USDT$/, '').replace(/USD$/, '');
+  if (base === 'XAUT' || base === 'XAU') return 'XAU';
+  return base || 'BTC';
+}
+
+function botBacktestTimeframe(bot) {
+  const tf = bot && bot.params && bot.params.tf;
+  if (tf === '1m' || tf === '5m' || tf === '15m' || tf === '1h' || tf === '4h' || tf === '1d') return tf;
+  return '1h';
+}
+
+function botBacktestStrategy(bot) {
+  const hay = String((bot && (bot.id + ' ' + bot.name + ' ' + (bot.logic || ''))) || '').toLowerCase();
+  if (hay.indexOf('rsi2') >= 0 || hay.indexOf('rsi-2') >= 0) return 'rsi2';
+  if (hay.indexOf('rsi') >= 0) return 'rsi';
+  if (hay.indexOf('macd') >= 0) return 'macd';
+  if (hay.indexOf('stoch') >= 0) return 'stoch';
+  if (hay.indexOf('bollinger') >= 0 || hay.indexOf('bb_') >= 0) return 'bb_reversion';
+  if (hay.indexOf('keltner') >= 0) return 'keltner';
+  if (hay.indexOf('ichimoku') >= 0) return 'ichimoku';
+  if (hay.indexOf('parabolic') >= 0 || hay.indexOf('psar') >= 0 || hay.indexOf('sar') >= 0) return 'parabolic_sar';
+  if (hay.indexOf('donchian') >= 0 || hay.indexOf('breakout') >= 0 || hay.indexOf('turtle') >= 0) return 'donchian';
+  if (hay.indexOf('short') >= 0 && hay.indexOf('meme') >= 0) return 'short_meme';
+  if (hay.indexOf('scalp') >= 0 || hay.indexOf('meme') >= 0) return 'scalping_meme';
+  return 'ma_cross';
+}
+
+function BotPerformanceBoard({ onNav }) {
+  const [entries, setEntries] = useState(null);
+  const [runningId, setRunningId] = useState('');
+  const [err, setErr] = useState('');
+  const [notice, setNotice] = useState('');
+  const load = async () => {
+    setErr('');
+    try {
+      const cands = flattenBacktestBots();
+      const headers = { 'Authorization': 'Bearer ' + BRIDGE_TOKEN };
+      const results = await Promise.all(cands.map(async (bot) => {
+        try {
+          const r = await fetch(`${API}/backtest/bot/${encodeURIComponent(bot.id)}?limit=1`, { headers });
+          if (!r.ok) return null;
+          const d = await r.json();
+          const hist = (d && d.history) || [];
+          if (!hist.length) return null;
+          return { bot, last: hist[0], metrics: hist[0].metrics || {} };
+        } catch (e) { return null; }
+      }));
+      const ranked = results.filter(Boolean).sort((a, b) => (Number(b.metrics.total_return_pct) || 0) - (Number(a.metrics.total_return_pct) || 0)).slice(0, 5);
+      setEntries(ranked);
+    } catch (e) {
+      setErr('Failed to load bot performance');
+      setEntries([]);
+    }
+  };
+  useEffect(() => { load(); }, []);
+  const runBacktest = async (bot) => {
+    setRunningId(bot.id);
+    setNotice('');
+    setErr('');
+    try {
+      const body = {
+        strategy: botBacktestStrategy(bot),
+        asset: botBacktestAsset(bot),
+        timeframe: botBacktestTimeframe(bot),
+        limit: 500,
+        params: (bot && bot.params) || {},
+        bot_id: bot.id,
+      };
+      const r = await fetch(`${API}/backtest/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) throw new Error((d && d.error) || 'Backtest failed');
+      const ret = d && d.result && d.result.total_return_pct;
+      setNotice(`${bot.id}: ${ret != null ? ret + '%' : 'saved'}`);
+      await load();
+    } catch (e) { setErr(`${bot.id}: ${e.message}`); }
+    setRunningId('');
+  };
+  return React.createElement(Card, { pad: 12 },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+      React.createElement('span', { style: { fontSize: 12, fontWeight: 800 } }, 'Bot Performance'),
+      React.createElement('div', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+        React.createElement('button', { onClick: load, style: { background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: 11, cursor: 'pointer' } }, 'Refresh'),
+        React.createElement('button', { onClick: () => onNav && onNav('bots'), style: { background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: 11, cursor: 'pointer' } }, 'Manage Bots')
+      )
+    ),
+    entries === null && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'Loading bot performance…'),
+    entries !== null && entries.length === 0 && React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary } }, 'No backtest data yet — run a backtest from the Bots tab.'),
+    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 7 } },
+      (entries || []).map((e, i) => {
+        const m = e.metrics || {};
+        const ret = Number(m.total_return_pct);
+        const wr = Number(m.win_rate);
+        return React.createElement('div', { key: e.bot.id, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, padding: '7px 8px', background: COLORS.bgElevated, borderRadius: 7, border: `1px solid ${COLORS.border}` } },
+          React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary, width: 14, fontFamily: "'Fira Code', monospace" } }, String(i + 1)),
+          React.createElement('span', { style: { flex: 1, fontWeight: 600, color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, e.bot.name),
+          React.createElement('span', { style: { fontWeight: 700, color: (ret || 0) >= 0 ? COLORS.green : COLORS.red, fontFamily: "'Fira Code', monospace" } }, isNaN(ret) ? '--' : fmtPct(ret)),
+          React.createElement('span', { style: { color: COLORS.textSecondary, fontFamily: "'Fira Code', monospace" } }, isNaN(wr) ? '--' : ('WR ' + wr + '%')),
+          React.createElement('span', { style: { color: COLORS.textTertiary } }, (m.trades != null ? m.trades : '--') + 't'),
+          React.createElement('button', {
+            onClick: () => runBacktest(e.bot),
+            disabled: runningId === e.bot.id,
+            style: { fontSize: 10, padding: '4px 8px', borderRadius: 6, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, cursor: runningId === e.bot.id ? 'wait' : 'pointer', fontWeight: 600 }
+          }, runningId === e.bot.id ? 'Running…' : 'Backtest')
+        );
+      })
+    ),
+    notice && React.createElement('div', { style: { marginTop: 8, fontSize: 11, color: COLORS.green } }, notice),
+    err && React.createElement('div', { style: { marginTop: 8, fontSize: 11, color: COLORS.red } }, err)
   );
 }
 
@@ -2776,7 +2973,10 @@ function DashboardView({ gainers, losers, health, search, setSearch, chartSymbol
               React.createElement('div', { style: { fontSize: 11, color: COLORS.textTertiary, marginBottom: 8, fontFamily: "'Fira Code', monospace" } }, toTradingViewSymbol(chartSymbol) + ' · powered by TradingView'),
               React.createElement(TradingViewWidget, { symbol: chartSymbol, height: 470 })
             ),
-            React.createElement(PineBlock, { symbol: chartSymbol }),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12, alignItems: 'start' } },
+              React.createElement(PineBlock, { symbol: chartSymbol, compact: true }),
+              React.createElement(BotPerformanceBoard, { onNav: nav })
+            ),
             React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 } },
               React.createElement(FlowPositions, { onNav: nav }),
               React.createElement(FlowSuggestions, { onNav: nav }),
