@@ -16,7 +16,9 @@ venv/
 agent_system/backtest/results/*_results.json
 agent_system/backtest/results/backtrader_xauusd_results.json
 agent_system/data/trades/
+data/trades/
 agent_system/reports/
+reports/
 temp_reports/
 data/indicators/
 
