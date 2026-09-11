@@ -147,6 +147,16 @@ class TradeJournal:
                 rule_id TEXT, trigger TEXT, priority TEXT DEFAULT 'normal',
                 title TEXT, message TEXT)""")
             c.execute("CREATE INDEX IF NOT EXISTS idx_notif_ts ON notification_log(ts)")
+            c.execute("""CREATE TABLE IF NOT EXISTS bot_backtests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bot_id TEXT NOT NULL,
+                user_id TEXT DEFAULT 'default',
+                ran_at REAL NOT NULL,
+                params_json TEXT DEFAULT '{}',
+                metrics_json TEXT DEFAULT '{}',
+                source TEXT DEFAULT 'manual'
+            )""")
+            c.execute("CREATE INDEX IF NOT EXISTS idx_bot_backtests_bot ON bot_backtests(bot_id, ran_at DESC)")
 
     def _seed_rules(self) -> None:
         with self._conn() as c:
@@ -551,6 +561,33 @@ class TradeJournal:
             res = self.evaluate(trig, ctx, state)
             triggered.extend(res["triggered"])
         return {"triggered": triggered}
+
+    # ── Bot Backtests ──────────────────────────────────────────────────────
+    def save_bot_backtest(self, bot_id: str, params: Dict[str, Any],
+                          metrics: Dict[str, Any], source: str = "manual",
+                          user_id: str = "default") -> Dict[str, Any]:
+        ran_at = _now()
+        with self._conn() as c:
+            c.execute(
+                """INSERT INTO bot_backtests (bot_id, user_id, ran_at, params_json, metrics_json, source)
+                   VALUES (?,?,?,?,?,?)""",
+                (bot_id, user_id, ran_at, json.dumps(params), json.dumps(metrics), source))
+        return {"bot_id": bot_id, "ran_at": ran_at, "params": params, "metrics": metrics, "source": source}
+
+    def get_bot_backtests(self, bot_id: str, user_id: str = "default",
+                          limit: int = 20) -> List[Dict[str, Any]]:
+        with self._conn() as c:
+            rows = c.execute(
+                """SELECT * FROM bot_backtests WHERE bot_id=? AND user_id=?
+                   ORDER BY ran_at DESC LIMIT ?""",
+                (bot_id, user_id, limit)).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["params"] = json.loads(d.get("params_json") or "{}")
+            d["metrics"] = json.loads(d.get("metrics_json") or "{}")
+            out.append(d)
+        return out
 
     def notification_log(self, limit: int = 50) -> List[Dict[str, Any]]:
         with self._conn() as c:

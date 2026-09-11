@@ -63,6 +63,7 @@ def _check_auth(request: web.Request) -> bool:
     auth = request.headers.get('Authorization', '')
     return auth == f'Bearer {_AUTH_TOKEN}'
 
+from agent_system.core.trade_journal import trade_journal as _journal
 import re as _re
 _SYMBOL_RE = _re.compile(r'^[A-Z0-9]{1,20}$')
 _TIMEFRAME_RE = _re.compile(r'^(1m|5m|15m|1h|4h|1d)$')
@@ -187,6 +188,7 @@ class PythonBridge:
         self.app.router.add_post('/backtrader/run', self.backtrader_run)
         self.app.router.add_get('/backtrader/results', self.backtrader_results)
         self.app.router.add_post('/backtest/run', self.backtest_run)
+        self.app.router.add_get('/backtest/bot/{bot_id}', self.backtest_bot_history)
         self.app.router.add_get('/calendar/events', self.calendar_events)
         self.app.router.add_get('/strategies/library', self.strategy_library)
         self.app.router.add_post('/strategies/optimize', self.strategy_optimize)
@@ -700,8 +702,13 @@ class PythonBridge:
             result = _library_backtest(strategy, ohlcv, params)
         else:
             result = self._run_strategy_backtest(strategy, closes, params)
-        return web.json_response({'strategy': strategy, 'asset': asset, 'timeframe': timeframe,
-                                  'bars': len(closes), 'result': result})
+        bot_id = body.get('bot_id')
+        resp = {'strategy': strategy, 'asset': asset, 'timeframe': timeframe,
+                'bars': len(closes), 'result': result}
+        if bot_id:
+            _journal.save_bot_backtest(bot_id, params, result, source='ui')
+            resp['bot_id'] = bot_id
+        return web.json_response(resp)
 
     def _run_strategy_backtest(self, strategy, closes, params):
         """Simple vectorized backtest returning performance metrics."""
@@ -792,6 +799,15 @@ class PythonBridge:
             'win_rate': round(win_rate, 1),
             'sharpe': round((total_ret / mdd) if mdd > 0 else 0, 2),
         }
+
+    async def backtest_bot_history(self, request: web.Request) -> web.Response:
+        """Return saved backtest history for a given bot_id (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        bot_id = request.match_info['bot_id']
+        limit = int(request.query.get('limit', 20))
+        rows = _journal.get_bot_backtests(bot_id, limit=limit)
+        return web.json_response({'bot_id': bot_id, 'history': rows})
 
     async def calendar_events(self, request: web.Request) -> web.Response:
         """Return upcoming high-impact economic events from Forex Factory (cached 24h)."""

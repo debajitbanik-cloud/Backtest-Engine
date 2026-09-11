@@ -1199,6 +1199,8 @@ function BotsView() {
   const [selBot, setSelBot] = useState(null);
   const [running, setRunning] = useState({});
   const [logs, setLogs] = useState({});
+  const [btHistory, setBtHistory] = useState({});
+  const [btLast, setBtLast] = useState(null);
 
   const bots = BOTS[cat] || [];
   const categories = BOT_CATEGORIES;
@@ -1242,6 +1244,26 @@ function BotsView() {
   };
 
   const botLogs = selBot ? (logs[selBot.id] || []) : [];
+
+  useEffect(() => {
+    if (!selBot) { setBtLast(null); return; }
+    const load = async () => {
+      try {
+        const r = await fetch(`${API}/backtest/bot/${selBot.id}?limit=10`, {
+          headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN }
+        });
+        const d = await r.json();
+        if (d.history && d.history.length) {
+          setBtHistory(prev => ({ ...prev, [selBot.id]: d.history }));
+          setBtLast(d.history[0]);
+        } else {
+          setBtHistory(prev => ({ ...prev, [selBot.id]: [] }));
+          setBtLast(null);
+        }
+      } catch (e) {}
+    };
+    load();
+  }, [selBot?.id]);
 
   return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '300px 1fr', gap: 18, height: 'calc(100vh - 120px)' } },
     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
@@ -1324,6 +1346,36 @@ function BotsView() {
             React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 } }, k),
             React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, String(v))
           ))
+        ),
+        btLast && React.createElement('div', { style: { marginBottom: 16 } },
+          React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'LAST BACKTEST RESULT'),
+          React.createElement(Card, { pad: 12, style: { background: COLORS.bgSurface, border: `1px solid ${COLORS.border}` } },
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 } },
+              [
+                ['Return', (btLast.metrics.total_return_pct ?? 0) + '%', (btLast.metrics.total_return_pct ?? 0) >= 0 ? COLORS.green : COLORS.red],
+                ['Win Rate', (btLast.metrics.win_rate ?? 0) + '%', COLORS.blue],
+                ['Trades', String(btLast.metrics.trades ?? 0), COLORS.text],
+                ['Max DD', (btLast.metrics.max_drawdown_pct ?? 0) + '%', COLORS.amber],
+              ].map(([label, val, col]) => React.createElement('div', { key: label },
+                React.createElement('div', { style: { fontSize: 9, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 } }, label),
+                React.createElement('div', { style: { fontSize: 16, fontWeight: 800, color: col, fontFamily: 'JetBrains Mono, monospace' } }, val)
+              ))
+            ),
+            React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginTop: 8 } }, 'Strategy: ' + (btLast.metrics.strategy || '—') + ' • ' + new Date(btLast.ran_at * 1000).toLocaleString())
+          )
+        ),
+        btHistory[selBot.id] && btHistory[selBot.id].length > 1 && React.createElement('div', { style: { marginBottom: 16 } },
+          React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'BACKTEST HISTORY'),
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' } },
+            btHistory[selBot.id].slice(1, 6).map((h, i) => React.createElement('div', {
+              key: i,
+              style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: COLORS.bgElevated, borderRadius: 6, border: `1px solid ${COLORS.border}`, fontSize: 11 }
+            },
+              React.createElement('span', { style: { color: COLORS.textSecondary } }, new Date(h.ran_at * 1000).toLocaleString()),
+              React.createElement('span', { style: { fontWeight: 700, color: (h.metrics.total_return_pct ?? 0) >= 0 ? COLORS.green : COLORS.red, fontFamily: 'JetBrains Mono, monospace' } }, (h.metrics.total_return_pct ?? 0) + '%'),
+              React.createElement('span', { style: { color: COLORS.textTertiary } }, (h.metrics.trades ?? 0) + ' trades')
+            ))
+          )
         ),
         React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'BOT LOG'),
         React.createElement('div', { style: { flex: 1, background: '#08090c', borderRadius: 8, padding: 10, overflowY: 'auto', fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: COLORS.green, minHeight: 180 } },
