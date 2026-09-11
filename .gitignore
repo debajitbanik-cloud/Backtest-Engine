@@ -18,6 +18,7 @@ agent_system/backtest/results/backtrader_xauusd_results.json
 agent_system/data/trades/
 agent_system/reports/
 temp_reports/
+data/indicators/
 
 # Runtime state
 *.log

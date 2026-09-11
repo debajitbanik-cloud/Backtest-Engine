@@ -136,6 +136,7 @@ class PythonBridge:
         self._status: Dict[str, Any] = {"running": False, "agents": {}}
         self._event_queue: asyncio.Queue = asyncio.Queue(maxsize=1000)
         self._subscribed = False
+        self.indicators_dir = Path(__file__).parent.parent / "data" / "indicators"
     
     def _setup_routes(self) -> None:
         self.app.router.add_get('/health', self.health)
@@ -230,6 +231,11 @@ class PythonBridge:
         self.app.router.add_get('/scheduler/runs', self.scheduler_runs_list)
         self.app.router.add_post('/scheduler/jobs/{job_id}/adopt', self.scheduler_job_adopt)
         self.app.router.add_post('/scheduler/jobs/{job_id}/reject', self.scheduler_job_reject)
+        # ── Indicator endpoints (auth enforced) ──────────────────────────────
+        self.app.router.add_post('/indicators/upload', self.indicators_upload)
+        self.app.router.add_get('/indicators', self.indicators_list)
+        self.app.router.add_get('/indicators/{ind_id}/series', self.indicators_series)
+        self.app.router.add_delete('/indicators/{ind_id}', self.indicators_delete)
     
     async def start(self) -> None:
         """Start the bridge server."""
@@ -2370,6 +2376,241 @@ class PythonBridge:
             return web.json_response({'status': 'rejected', 'run_id': run_id})
         except Exception as e:
             return web.json_response({'error': str(e)}, status=400)
+
+    # ── Indicator endpoints (parser+evaluator only, never eval/exec) ──────────
+
+    def _indicator_path(self, ind_id: str) -> Optional[Path]:
+        """Resolve data/indicators/<id> safely, or None on bad id."""
+        import re as _re
+        if not _re.match(r'^[A-Za-z0-9_-]{1,64}$', ind_id or ''):
+            return None
+        base = Path(self.indicators_dir).resolve()
+        target = (Path(self.indicators_dir) / ind_id).resolve()
+        try:
+            if not target.is_relative_to(base):
+                return None
+        except Exception:
+            return None
+        return target
+
+    def _load_indicator_spec(self, ind_id: str) -> Optional[Dict[str, Any]]:
+        indir = self._indicator_path(ind_id)
+        if indir is None:
+            return None
+        spec_path = indir / 'spec.json'
+        if not spec_path.exists():
+            return None
+        try:
+            with open(spec_path, 'r') as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _spec_to_ir(spec: Dict[str, Any]):
+        from agent_system.indicators.pine_parser import PineIR
+        ir = PineIR()
+        ir.meta = dict(spec.get('meta', {}))
+        ir.inputs = list(spec.get('inputs', []))
+        ir.plots = list(spec.get('plots', []))
+        ir.assigns = dict(spec.get('assigns', {}))
+        ir.errors = list(spec.get('errors', []))
+        return ir
+
+    @staticmethod
+    def _normalize_indicator_asset(symbol: str) -> str:
+        s = (symbol or '').upper().strip()
+        if s in ('XAUTUSD', 'XAUTUSDT', 'XAUUSD', 'XAUUSDT'):
+            return 'XAU'
+        if s.endswith('USDT') and len(s) > 4:
+            return s[:-4]
+        if s.endswith('USD') and len(s) > 3:
+            return s[:-3]
+        return s
+
+    async def indicators_upload(self, request: web.Request) -> web.Response:
+        """Upload a Pine Script file, parse it, store spec+source (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        try:
+            post = await request.post()
+        except Exception:
+            return web.json_response({'error': 'Invalid multipart body'}, status=400)
+        field = post.get('file')
+        if field is None or not hasattr(field, 'filename') or not field.filename:
+            return web.json_response({'error': 'Missing file field'}, status=400)
+        filename = field.filename
+        ext = Path(filename).suffix.lower()
+        if ext not in ('.pine', '.pinescript'):
+            return web.json_response({'error': 'Invalid extension. Use .pine or .pinescript'}, status=400)
+        try:
+            raw: bytes = field.file.read()
+        except Exception:
+            return web.json_response({'error': 'Could not read upload'}, status=400)
+        if len(raw) > 200 * 1024:
+            return web.json_response({'error': 'File too large (200KB cap)'}, status=413)
+        try:
+            code = raw.decode('utf-8')
+        except Exception:
+            return web.json_response({'error': 'File must be UTF-8 text'}, status=400)
+        try:
+            from agent_system.indicators.pine_parser import parse_pine
+            ir = parse_pine(code)
+        except Exception as e:
+            return web.json_response({'error': f'Parse failed: {e}'}, status=422)
+        import secrets as _sec
+        ind_id = _sec.token_hex(8)
+        indir = Path(self.indicators_dir) / ind_id
+        try:
+            indir.mkdir(parents=True, exist_ok=True)
+            with open(indir / 'source.pine', 'w') as f:
+                f.write(code)
+            spec = {
+                'id': ind_id,
+                'title': ir.meta.get('title', Path(filename).stem),
+                'version': ir.meta.get('version'),
+                'created_at': datetime.utcnow().isoformat(),
+                'filename': Path(filename).name,
+                'meta': dict(ir.meta),
+                'inputs': list(ir.inputs),
+                'plots': list(ir.plots),
+                'assigns': dict(ir.assigns),
+                'errors': list(ir.errors),
+            }
+            with open(indir / 'spec.json', 'w') as f:
+                json.dump(spec, f)
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+        return web.json_response({'id': ind_id, 'errors': list(ir.errors)})
+
+    async def indicators_list(self, request: web.Request) -> web.Response:
+        """List stored indicators (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        items = []
+        try:
+            base = Path(self.indicators_dir)
+            if base.exists():
+                for child in sorted(base.iterdir()):
+                    if not child.is_dir():
+                        continue
+                    spec = self._load_indicator_spec(child.name)
+                    if not spec:
+                        continue
+                    items.append({
+                        'id': spec.get('id', child.name),
+                        'title': spec.get('title'),
+                        'version': spec.get('version'),
+                        'created_at': spec.get('created_at'),
+                    })
+            return web.json_response({'indicators': items, 'count': len(items)})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def indicators_series(self, request: web.Request) -> web.Response:
+        """Evaluate a stored indicator over fetched OHLCV (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        ind_id = request.match_info.get('ind_id', '')
+        spec = self._load_indicator_spec(ind_id)
+        if spec is None:
+            # Distinguish bad id vs missing: both 404.
+            return web.json_response({'error': 'Indicator not found'}, status=404)
+        symbol = (request.query.get('symbol') or '').upper().strip()
+        timeframe = request.query.get('timeframe') or ''
+        if not symbol or not _validate_symbol(symbol):
+            # Accept asset-style (BTC) by normalizing to BTCUSD for validation.
+            _norm = self._normalize_indicator_asset(symbol)
+            if not _validate_symbol(f"{_norm}USD"):
+                return web.json_response({'error': 'Invalid symbol'}, status=400)
+        if not _validate_timeframe(timeframe):
+            return web.json_response({'error': 'Invalid timeframe'}, status=400)
+        try:
+            limit = int(request.query.get('limit', '300'))
+        except ValueError:
+            return web.json_response({'error': 'Invalid limit'}, status=400)
+        limit = max(1, min(limit, 1000))
+        # Input overrides: any query key not in {symbol,timeframe,limit} must
+        # match a declared input name, else 400.
+        declared = {i['name']: i for i in spec.get('inputs', [])}
+        reserved = {'symbol', 'timeframe', 'limit'}
+        overrides: Dict[str, Any] = {}
+        for k, v in request.query.items():
+            if k in reserved:
+                continue
+            if k not in declared:
+                return web.json_response({'error': f'Unknown input: {k}'}, status=400)
+            kind = (declared[k].get('kind') or '').lower()
+            try:
+                if kind == 'int':
+                    overrides[k] = int(float(v))
+                elif kind == 'float':
+                    overrides[k] = float(v)
+                elif kind == 'bool':
+                    lv = v.lower()
+                    if lv in ('true', '1', 'yes'):
+                        overrides[k] = True
+                    elif lv in ('false', '0', 'no'):
+                        overrides[k] = False
+                    else:
+                        return web.json_response({'error': f'Invalid bool for {k}'}, status=400)
+                elif kind == 'source':
+                    overrides[k] = v
+                else:
+                    try:
+                        overrides[k] = float(v)
+                    except ValueError:
+                        overrides[k] = v
+            except (ValueError, TypeError):
+                return web.json_response({'error': f'Invalid value for input {k}'}, status=400)
+        try:
+            asset = self._normalize_indicator_asset(symbol)
+            candles = await self._fetch_ohlcv(asset, timeframe, limit)
+        except Exception:
+            return web.json_response({'error': 'Failed to fetch candles'}, status=502)
+        if not candles or len(candles) < 1:
+            return web.json_response({'error': 'No candle data'}, status=404)
+        try:
+            import pandas as _pd
+            from agent_system.indicators.pine_evaluator import evaluate
+            ir = self._spec_to_ir(spec)
+            df = _pd.DataFrame(candles)
+            result = evaluate(ir, df, inputs=overrides or None)
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=422)
+        plots_spec = {p.get('title', p.get('target', '')): p for p in spec.get('plots', [])}
+        plots_out = []
+        columns = result.get('columns', {})
+        for name, series in columns.items():
+            color = (plots_spec.get(name) or {}).get('color')
+            vals = []
+            for v in series:
+                try:
+                    import math as _math
+                    if v is None:
+                        vals.append(None)
+                    else:
+                        f = float(v)
+                        vals.append(None if _math.isnan(f) else f)
+                except (TypeError, ValueError):
+                    vals.append(None)
+            plots_out.append({'name': name, 'color': color, 'values': vals})
+        return web.json_response({'plots': plots_out})
+
+    async def indicators_delete(self, request: web.Request) -> web.Response:
+        """Delete a stored indicator (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        ind_id = request.match_info.get('ind_id', '')
+        indir = self._indicator_path(ind_id)
+        if indir is None or not (indir / 'spec.json').exists():
+            return web.json_response({'error': 'Indicator not found'}, status=404)
+        try:
+            import shutil as _shutil
+            _shutil.rmtree(indir)
+            return web.json_response({'deleted': True, 'id': ind_id})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
 
     async def _get_options_chain(self, underlying: str) -> List[Dict]:
         """Fetch and normalize an options chain for a given underlying."""
