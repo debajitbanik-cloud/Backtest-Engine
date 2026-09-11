@@ -2243,7 +2243,7 @@ class PythonBridge:
         # In a full implementation, this would spawn a background task
         # For now, return success with a mock PID
         import os, time
-        mock_pid = os.getpid() + hash(bot_id) % 10000
+        mock_pid = _os.getpid() + hash(bot_id) % 10000
         return web.json_response({
             'status': 'ok',
             'bot_id': bot_id,
