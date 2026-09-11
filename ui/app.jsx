@@ -2882,13 +2882,14 @@ function useTabHistory(initialTab) {
 
   const canGoBack = historyReady && navCountRef.current > 1;
   const goBack = () => window.history.back();
+  const goForward = () => window.history.forward();
 
-  return { tab, navigate, canGoBack, goBack };
+  return { tab, navigate, canGoBack, goBack, goForward };
 }
 
 function App() {
   const E = window.Theme && window.Theme.EXTRA || {};
-  const { tab, navigate, canGoBack, goBack } = useTabHistory('dashboard');
+  const { tab, navigate, canGoBack, goBack, goForward } = useTabHistory('dashboard');
   const [connected, setConnected] = useState(false);
   const [health, setHealth] = useState(null);
   const [gainers, setGainers] = useState([]);
@@ -3002,6 +3003,11 @@ function App() {
           title: 'Go back',
           style: { padding: '5px 8px', borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s, color 0.15s' }
         }, '←'),
+        React.createElement('button', {
+          onClick: goForward,
+          title: 'Go forward',
+          style: { padding: '5px 8px', borderRadius: 6, border: `1px solid ${COLORS.border}`, background: 'transparent', color: COLORS.textSecondary, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s, color 0.15s' }
+        }, '→'),
         React.createElement('div', { style: { width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#4e8cff,#9b59b6)' } }),
         React.createElement('span', { style: { fontSize: 15, fontFamily: E.fontDisplay || 'inherit', fontWeight: 800, letterSpacing: 0.4 } }, 'Trading Command Center')
       ),
