@@ -149,7 +149,7 @@ class EconomicCalendar:
 
     async def _fetch(self, url: str) -> List[Dict]:
         """Fetch raw JSON from the Forex Factory feed (IPv4)."""
-        connector = aiohttp.TCPConnector(family=socket.AF_INET, ssl=False)
+        connector = aiohttp.TCPConnector(family=socket.AF_INET)
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"}
         async with aiohttp.ClientSession(connector=connector, headers=headers) as session:

@@ -320,8 +320,10 @@ class TradingSystem:
             )
         
         # Start bridge server for TypeScript integration
+        # Host reads HOST (fallback BRIDGE_HOST, then '127.0.0.1' — unchanged
+        # default). Set HOST/BRIDGE_HOST=0.0.0.0 when running containerised.
         bridge_config = BridgeConfig(
-            host="127.0.0.1",
+            host=os.environ.get("HOST", os.environ.get("BRIDGE_HOST", "127.0.0.1")),
             port=8088,
             shared_data_dir="./data/shared"
         )

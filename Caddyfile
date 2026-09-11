@@ -8,7 +8,7 @@
 # Main domain - replace with your domain
 trading.yourdomain.com {
     # Proxy to trading app
-    reverse_proxy trading-app:8080 {
+    reverse_proxy trading-app:8088 {
         header_up Host {host}
         header_up X-Real-IP {remote}
         header_up X-Forwarded-For {remote}
@@ -20,7 +20,7 @@ trading.yourdomain.com {
         header Connection *Upgrade*
         header Upgrade websocket
     }
-    reverse_proxy @websocket trading-app:8080 {
+    reverse_proxy @websocket trading-app:8088 {
         header_up Host {host}
         header_up Upgrade {>Upgrade}
         header_up Connection "upgrade"
