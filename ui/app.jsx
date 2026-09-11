@@ -1194,6 +1194,244 @@ function RegistryView() {
   );
 }
 
+/* ============================ SCHEDULER CONTROLS ============================ */
+const CADENCE_OPTIONS = [
+  { value: 'off', label: 'Off' },
+  { value: '@hourly', label: '@hourly' },
+  { value: '@daily', label: '@daily' },
+  { value: '@weekly', label: '@weekly' },
+  { value: 'custom', label: 'Custom cron…' },
+];
+const METRIC_OPTIONS = [
+  { value: 'sharpe', label: 'Sharpe' },
+  { value: 'total_return_pct', label: 'Return %' },
+  { value: 'profit_factor', label: 'Profit Factor' },
+];
+
+function SchedulerControls({ bot }) {
+  const [job, setJob] = useState(null);
+  const [runs, setRuns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [customCron, setCustomCron] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const jobId = job ? job.id : null;
+
+  const load = async () => {
+    try {
+      const [jRes, rRes] = await Promise.all([
+        fetch(`${API}/scheduler/jobs`, { headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN } }),
+        fetch(`${API}/scheduler/runs?limit=10`, { headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN } }),
+      ]);
+      const jData = await jRes.json();
+      const rData = await rRes.json();
+      const allJobs = jData.jobs || [];
+      const myJob = allJobs.find(j => j.bot_id === bot.id) || null;
+      setJob(myJob);
+      const allRuns = rData.runs || [];
+      setRuns(myJob ? allRuns.filter(r => r.job_id === myJob.id) : []);
+    } catch (e) {}
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [bot.id]);
+
+  const cadenceValue = job ? (CADENCE_OPTIONS.some(c => c.value === job.cadence_cron) ? job.cadence_cron : 'custom') : 'off';
+  const metricValue = job ? job.metric : 'sharpe';
+  const enabled = job ? job.enabled : false;
+
+  const createJob = async (cadence, metric) => {
+    setCreating(true);
+    try {
+      const cron = cadence === 'custom' ? (customCron || '@weekly') : cadence;
+      const r = await fetch(`${API}/scheduler/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({ bot_id: bot.id, cadence_cron: cron, metric, enabled: true }),
+      });
+      const d = await r.json();
+      if (d.job) setJob(d.job);
+    } catch (e) {}
+    setCreating(false);
+    load();
+  };
+
+  const updateJob = async (fields) => {
+    if (!jobId) return;
+    try {
+      const r = await fetch(`${API}/scheduler/jobs/${jobId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify(fields),
+      });
+      const d = await r.json();
+      if (d.job) setJob(d.job);
+    } catch (e) {}
+    load();
+  };
+
+  const deleteJob = async () => {
+    if (!jobId) return;
+    try {
+      await fetch(`${API}/scheduler/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+      });
+      setJob(null);
+      setRuns([]);
+    } catch (e) {}
+  };
+
+  const adoptRun = async (runId) => {
+    if (!jobId) return;
+    try {
+      await fetch(`${API}/scheduler/jobs/${jobId}/adopt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({ run_id: runId }),
+      });
+      load();
+    } catch (e) {}
+  };
+
+  const rejectRun = async (runId) => {
+    if (!jobId) return;
+    try {
+      await fetch(`${API}/scheduler/jobs/${jobId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({ run_id: runId }),
+      });
+      load();
+    } catch (e) {}
+  };
+
+  const handleCadenceChange = (val) => {
+    if (val === 'off') {
+      if (jobId) deleteJob();
+      return;
+    }
+    if (val === 'custom') {
+      setCustomCron('');
+      return;
+    }
+    if (!jobId) {
+      createJob(val, metricValue);
+    } else {
+      updateJob({ cadence_cron: val });
+    }
+  };
+
+  const handleMetricChange = (val) => {
+    if (!jobId) {
+      createJob(cadenceValue === 'off' ? '@weekly' : cadenceValue, val);
+    } else {
+      updateJob({ metric: val });
+    }
+  };
+
+  const handleToggle = () => {
+    if (!jobId) {
+      createJob('@weekly', metricValue);
+    } else {
+      updateJob({ enabled: !enabled });
+    }
+  };
+
+  const fmtRunTime = (ts) => ts ? new Date(ts * 1000).toLocaleString() : '--';
+  const lastRun = runs.length > 0 ? runs[0] : null;
+
+  const STATUS_COLORS = { ok: COLORS.green, running: COLORS.blue, pending: COLORS.amber, error: COLORS.red, failed_fetch: COLORS.red, partial: COLORS.amber, rejected: COLORS.red };
+
+  if (loading) {
+    return React.createElement('div', { style: { padding: '12px 0', fontSize: 11, color: COLORS.textTertiary } }, 'Loading scheduler…');
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 } },
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'CADENCE'),
+        React.createElement('select', {
+          value: cadenceValue,
+          onChange: (e) => handleCadenceChange(e.target.value),
+          disabled: creating,
+          style: { width: '100%', padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 }
+        },
+          CADENCE_OPTIONS.map(c => React.createElement('option', { key: c.value, value: c.value }, c.label))
+        )
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'METRIC'),
+        React.createElement('select', {
+          value: metricValue,
+          onChange: (e) => handleMetricChange(e.target.value),
+          disabled: creating,
+          style: { width: '100%', padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12 }
+        },
+          METRIC_OPTIONS.map(m => React.createElement('option', { key: m.value, value: m.value }, m.label))
+        )
+      ),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'ENABLED'),
+        React.createElement('button', {
+          onClick: handleToggle,
+          disabled: creating,
+          style: {
+            width: '100%', padding: '7px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            background: enabled ? COLORS.green + '22' : COLORS.bgElevated,
+            color: enabled ? COLORS.green : COLORS.textTertiary,
+            border: `1px solid ${enabled ? COLORS.green : COLORS.border}`
+          }
+        }, enabled ? '● ON' : '○ OFF')
+      )
+    ),
+    cadenceValue === 'custom' && React.createElement('div', { style: { marginBottom: 10 } },
+      React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, marginBottom: 4 } }, 'CRON EXPRESSION'),
+      React.createElement('div', { style: { display: 'flex', gap: 6 } },
+        React.createElement('input', {
+          value: customCron,
+          placeholder: 'e.g. 0 */6 * * *',
+          onChange: (e) => setCustomCron(e.target.value),
+          style: { flex: 1, padding: '7px 8px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }
+        }),
+        React.createElement('button', {
+          onClick: () => { if (customCron.trim()) { if (jobId) updateJob({ cadence_cron: customCron.trim() }); else createJob('custom', metricValue); } },
+          disabled: creating || !customCron.trim(),
+          style: { padding: '7px 12px', borderRadius: 6, background: COLORS.blue, border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: creating ? 'wait' : 'pointer' }
+        }, 'Set')
+      )
+    ),
+    lastRun && React.createElement('div', { style: { padding: '8px 10px', borderRadius: 6, background: COLORS.bgElevated, border: `1px solid ${COLORS.border}`, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary } }, 'LAST RUN'),
+        React.createElement('div', { style: { fontSize: 11, color: COLORS.textSecondary, fontFamily: 'JetBrains Mono, monospace' } }, fmtRunTime(lastRun.finished_at || lastRun.started_at))
+      ),
+      React.createElement('span', { style: { fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: (STATUS_COLORS[lastRun.status] || COLORS.textTertiary) + '22', color: STATUS_COLORS[lastRun.status] || COLORS.textTertiary } }, (lastRun.status || '').toUpperCase())
+    ),
+    runs.length > 0 && React.createElement('div', null,
+      React.createElement('div', { style: { fontSize: 10, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 6, letterSpacing: 0.5 } }, 'RUN HISTORY'),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 140, overflowY: 'auto' } },
+        runs.slice(0, 5).map(r => React.createElement('div', { key: r.id, style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 5, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, fontSize: 11 } },
+          React.createElement('span', { style: { width: 6, height: 6, borderRadius: '50%', background: STATUS_COLORS[r.status] || COLORS.textTertiary, flexShrink: 0 } }),
+          React.createElement('span', { style: { flex: 1, color: COLORS.textSecondary, fontFamily: 'JetBrains Mono, monospace', fontSize: 10 } }, fmtRunTime(r.finished_at || r.started_at)),
+          React.createElement('span', { style: { fontSize: 10, fontWeight: 700, color: STATUS_COLORS[r.status] || COLORS.textTertiary } }, (r.status || '').toUpperCase()),
+          r.status === 'ok' && !r.promoted && r.result && React.createElement('div', { style: { display: 'flex', gap: 4 } },
+            React.createElement('button', {
+              onClick: () => adoptRun(r.id),
+              style: { padding: '3px 7px', borderRadius: 4, background: COLORS.green + '22', border: `1px solid ${COLORS.green}`, color: COLORS.green, fontSize: 9, fontWeight: 700, cursor: 'pointer' }
+            }, 'Adopt'),
+            React.createElement('button', {
+              onClick: () => rejectRun(r.id),
+              style: { padding: '3px 7px', borderRadius: 4, background: 'transparent', border: `1px solid ${COLORS.red}66`, color: COLORS.red, fontSize: 9, fontWeight: 700, cursor: 'pointer' }
+            }, 'Reject')
+          ),
+          r.promoted && React.createElement('span', { style: { fontSize: 9, fontWeight: 700, color: COLORS.green } }, 'ADOPTED')
+        ))
+      )
+    )
+  );
+}
+
 function BotsView() {
   const [cat, setCat] = useState('btc');
   const [selBot, setSelBot] = useState(null);
@@ -1346,6 +1584,10 @@ function BotsView() {
             React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 } }, k),
             React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: COLORS.text, fontFamily: 'JetBrains Mono, monospace' } }, String(v))
           ))
+        ),
+        React.createElement('div', { style: { marginBottom: 16 } },
+          React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'SCHEDULING'),
+          React.createElement(SchedulerControls, { bot: selBot })
         ),
         btLast && React.createElement('div', { style: { marginBottom: 16 } },
           React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 8, letterSpacing: 0.5 } }, 'LAST BACKTEST RESULT'),
@@ -2713,6 +2955,96 @@ function NotificationRuleCard({ r, onSave, onDelete }) {
   );
 }
 
+/* ============================ SETTINGS SCHEDULER SECTION ============================ */
+function SettingsSchedulerSection() {
+  const [jobs, setJobs] = useState([]);
+  const [runs, setRuns] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      const [jRes, rRes] = await Promise.all([
+        fetch(`${API}/scheduler/jobs`, { headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN } }),
+        fetch(`${API}/scheduler/runs?limit=20`, { headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN } }),
+      ]);
+      const jData = await jRes.json();
+      const rData = await rRes.json();
+      setJobs(jData.jobs || []);
+      setRuns(rData.runs || []);
+    } catch (e) {}
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const deleteJob = async (id) => {
+    try {
+      await fetch(`${API}/scheduler/jobs/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+      });
+      load();
+    } catch (e) {}
+  };
+
+  const toggleJob = async (job) => {
+    try {
+      await fetch(`${API}/scheduler/jobs/${job.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + BRIDGE_TOKEN },
+        body: JSON.stringify({ enabled: !job.enabled }),
+      });
+      load();
+    } catch (e) {}
+  };
+
+  const enabledCount = jobs.filter(j => j.enabled).length;
+
+  const STATUS_COLORS = { ok: COLORS.green, running: COLORS.blue, pending: COLORS.amber, error: COLORS.red, failed_fetch: COLORS.red, partial: COLORS.amber };
+  const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleString() : '--';
+
+  if (loading) {
+    return React.createElement(Card, { pad: 14 }, React.createElement('div', { style: { fontSize: 12, color: COLORS.textTertiary } }, 'Loading scheduler…'));
+  }
+
+  return React.createElement(Card, { pad: 16 },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 14 } },
+      React.createElement(Metric, { label: 'Total Jobs', value: String(jobs.length), color: COLORS.text }),
+      React.createElement(Metric, { label: 'Active Jobs', value: String(enabledCount), color: enabledCount > 0 ? COLORS.green : COLORS.textTertiary }),
+      React.createElement(Metric, { label: 'Total Runs', value: String(runs.length), color: COLORS.text })
+    ),
+    jobs.length === 0
+      ? React.createElement('div', { style: { fontSize: 12, color: COLORS.textTertiary, padding: '10px 0' } }, 'No scheduled jobs. Create one from the Bots tab by selecting a bot and choosing a cadence.')
+      : React.createElement('div', null,
+          React.createElement('div', { style: { fontSize: 10, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 6, letterSpacing: 0.5 } }, 'JOB LIST'),
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+            jobs.map(j => React.createElement('div', { key: j.id, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: COLORS.bgElevated, border: `1px solid ${j.enabled ? COLORS.green + '44' : COLORS.border}` } },
+              React.createElement('span', { style: { width: 8, height: 8, borderRadius: '50%', background: j.enabled ? COLORS.green : COLORS.textTertiary, boxShadow: j.enabled ? `0 0 6px ${COLORS.green}` : 'none', flexShrink: 0 } }),
+              React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+                React.createElement('div', { style: { fontSize: 12, fontWeight: 700, color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, j.bot_id),
+                React.createElement('div', { style: { fontSize: 10, color: COLORS.textTertiary, fontFamily: 'JetBrains Mono, monospace' } }, j.cadence_cron + ' · ' + j.metric)
+              ),
+              React.createElement('span', { style: { fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: j.enabled ? COLORS.green + '22' : COLORS.bgSurface, color: j.enabled ? COLORS.green : COLORS.textTertiary } }, j.enabled ? 'ON' : 'OFF'),
+              React.createElement('button', { onClick: () => toggleJob(j), style: { padding: '4px 8px', borderRadius: 5, background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.textSecondary, fontSize: 10, cursor: 'pointer' } }, j.enabled ? 'Disable' : 'Enable'),
+              React.createElement('button', { onClick: () => deleteJob(j.id), style: { padding: '4px 8px', borderRadius: 5, background: 'transparent', border: `1px solid ${COLORS.red}44`, color: COLORS.red, fontSize: 10, cursor: 'pointer' } }, 'Delete')
+            ))
+          )
+        ),
+    runs.length > 0 && React.createElement('div', { style: { marginTop: 14 } },
+      React.createElement('div', { style: { fontSize: 10, fontWeight: 700, color: COLORS.textTertiary, marginBottom: 6, letterSpacing: 0.5 } }, 'RECENT RUNS'),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 200, overflowY: 'auto' } },
+        runs.slice(0, 10).map(r => React.createElement('div', { key: r.id, style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: COLORS.bgSurface, border: `1px solid ${COLORS.border}`, fontSize: 11 } },
+          React.createElement('span', { style: { width: 6, height: 6, borderRadius: '50%', background: STATUS_COLORS[r.status] || COLORS.textTertiary, flexShrink: 0 } }),
+          React.createElement('span', { style: { flex: 1, color: COLORS.textSecondary, fontSize: 10, fontFamily: 'JetBrains Mono, monospace' } }, r.job_id),
+          React.createElement('span', { style: { fontSize: 10, color: COLORS.textTertiary } }, fmtTime(r.finished_at || r.started_at)),
+          React.createElement('span', { style: { fontSize: 10, fontWeight: 700, color: STATUS_COLORS[r.status] || COLORS.textTertiary } }, (r.status || '').toUpperCase()),
+          r.promoted && React.createElement('span', { style: { fontSize: 9, fontWeight: 700, color: COLORS.green } }, 'ADOPTED')
+        ))
+      )
+    )
+  );
+}
+
 /* ============================ SETTINGS VIEW ============================ */
 function SettingsView({ health }) {
   const [deltaKey, setDeltaKey] = useState('');
@@ -2850,6 +3182,9 @@ function SettingsView({ health }) {
           )
         )
       )
+    ),
+    React.createElement(Section, { title: 'Scheduling' },
+      React.createElement(SettingsSchedulerSection, null)
     ),
     React.createElement(Section, { title: 'UI Preferences' },
       React.createElement(Card, { pad: 16 },
