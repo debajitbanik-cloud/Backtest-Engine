@@ -64,3 +64,6 @@ lightgbm>=4.0.0
 # Visualization
 plotly>=5.0.0
 matplotlib>=3.8.0
+
+# Scheduler
+croniter>=2.0.0

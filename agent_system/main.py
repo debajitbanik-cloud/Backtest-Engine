@@ -43,6 +43,7 @@ from execution.engine import ExecutionEngine, ExecutionConfig, DefaultRiskOverla
 from execution.adapters.delta_adapter import DeltaAdapter
 from execution.adapters.mt5_adapter import MT5Adapter, MT5_AVAILABLE
 from bridge.python_bridge import PythonBridge, BridgeConfig
+from scheduler.service import SchedulerService
 import sys
 sys.path.append(str(Path(__file__).parent.parent / 'ui'))
 from server import start_ui_server
@@ -357,6 +358,10 @@ class TradingSystem:
             else:
                 await self.data_feed.start()
                 print(f"{type(self.data_feed).__name__} started")
+        
+        # Start scheduler service as a background task
+        self._scheduler_service = SchedulerService(event_bus=self.event_bus)
+        asyncio.create_task(self._scheduler_service.run())
     
     async def stop(self) -> None:
         """Stop all agents gracefully."""

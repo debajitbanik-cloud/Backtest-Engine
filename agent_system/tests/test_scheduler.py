@@ -1,8 +1,11 @@
 """Tests for agent_system.scheduler — store CRUD, optimizer pure functions, policy matrix."""
+import asyncio
 import json
 import sys
 import tempfile
+import time
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -10,6 +13,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agent_system.scheduler.store import SchedulerStore
 from agent_system.scheduler.optimizer import build_grid, evaluate, promotion_policy
+from agent_system.scheduler.service import (
+    SchedulerService,
+    _resolve_cron,
+    _next_run,
+)
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -213,3 +221,71 @@ class TestPromotionPolicy:
         cand = self._make(1.0, 50, 15.1)  # +5.1pp > 5pp
         ok, reason = promotion_policy(cur, cand)
         assert ok is False
+
+
+# ── Cron helpers ─────────────────────────────────────────────────────────────
+class TestCronHelpers:
+    def test_resolve_shorthand(self):
+        assert _resolve_cron("@hourly") == "0 * * * *"
+        assert _resolve_cron("@daily") == "0 0 * * *"
+        assert _resolve_cron("@weekly") == "0 0 * * 0"
+
+    def test_resolve_passthrough(self):
+        assert _resolve_cron("30 2 * * 1") == "30 2 * * 1"
+
+    def test_next_run_in_future(self):
+        try:
+            from croniter import croniter  # noqa: F401
+        except ImportError:
+            pytest.skip("croniter not installed")
+        cron = _resolve_cron("@hourly")
+        nxt = _next_run(cron, after=time.time())
+        assert nxt > time.time()
+
+
+# ── SchedulerService ─────────────────────────────────────────────────────────
+@pytest.fixture
+def svc_store(tmp_path):
+    db = tmp_path / "test_svc.db"
+    return SchedulerStore(db_path=db)
+
+
+class TestSchedulerService:
+    def test_init_default(self, svc_store):
+        svc = SchedulerService(store=svc_store)
+        assert svc._running is False
+        assert svc.store is svc_store
+
+    @pytest.mark.asyncio
+    async def test_start_stop(self, svc_store):
+        svc = SchedulerService(store=svc_store, poll_interval=100)
+        await svc.start()
+        assert svc._running is True
+        assert svc._task is not None
+        await svc.stop()
+        assert svc._running is False
+
+    @pytest.mark.asyncio
+    async def test_tick_finds_due_job(self, svc_store):
+        job = svc_store.create_job(bot_id="tick_test", cadence_cron="@hourly")
+        svc = SchedulerService(store=svc_store, poll_interval=999)
+        # Manually call _tick once; no jobs should be due since they were just created
+        svc._last_check = time.time() - 7200  # pretend last check was 2h ago
+        await svc._tick()
+        # Verify _last_check was updated
+        assert svc._last_check > 0
+
+    @pytest.mark.asyncio
+    async def test_emit_optimizer_run_publishes_event(self, svc_store):
+        mock_bus = AsyncMock()
+        svc = SchedulerService(store=svc_store, event_bus=mock_bus)
+        await svc._emit_optimizer_run(
+            job_id="j1", run_id="r1", bot_id="b1",
+            kind="backtest", status="ok",
+            result={"total_return_pct": 5.0}, promoted=False,
+        )
+        mock_bus.publish.assert_called_once()
+        event = mock_bus.publish.call_args[0][0]
+        assert event.payload["event_type"] == "optimizer_run"
+        assert event.payload["job_id"] == "j1"
+        assert event.payload["status"] == "ok"

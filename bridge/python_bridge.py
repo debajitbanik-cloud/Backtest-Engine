@@ -224,6 +224,12 @@ class PythonBridge:
         self.app.router.add_post('/bot/start', self.bot_start)
         self.app.router.add_post('/bot/stop', self.bot_stop)
         self.app.router.add_get('/bot/status', self.bot_status)
+        # ── Scheduler endpoints (auth enforced) ──────────────────────────────
+        self.app.router.add_get('/scheduler/jobs', self.scheduler_jobs_list)
+        self.app.router.add_post('/scheduler/jobs', self.scheduler_jobs_create)
+        self.app.router.add_get('/scheduler/runs', self.scheduler_runs_list)
+        self.app.router.add_post('/scheduler/jobs/{job_id}/adopt', self.scheduler_job_adopt)
+        self.app.router.add_post('/scheduler/jobs/{job_id}/reject', self.scheduler_job_reject)
     
     async def start(self) -> None:
         """Start the bridge server."""
@@ -2257,6 +2263,113 @@ class PythonBridge:
                 'sol_ma_scalp': {'running': False, 'category': 'sol_scalp'},
             }
         })
+
+    # ── Scheduler endpoints ──────────────────────────────────────────────────
+
+    async def scheduler_jobs_list(self, request: web.Request) -> web.Response:
+        """List scheduler jobs (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            jobs = store.list_jobs()
+            return web.json_response({'jobs': jobs, 'count': len(jobs)})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def scheduler_jobs_create(self, request: web.Request) -> web.Response:
+        """Create a new scheduler job (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        bot_id = body.get('bot_id')
+        if not bot_id:
+            return web.json_response({'error': 'bot_id required'}, status=400)
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            job = store.create_job(
+                bot_id=bot_id,
+                kind=body.get('kind', 'backtest'),
+                cadence_cron=body.get('cadence_cron', '@weekly'),
+                metric=body.get('metric', 'sharpe'),
+                grid=body.get('grid'),
+                auto_adopt=bool(body.get('auto_adopt', False)),
+                user_id=body.get('user_id', 'default'),
+            )
+            return web.json_response({'job': job})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=400)
+
+    async def scheduler_runs_list(self, request: web.Request) -> web.Response:
+        """List scheduler runs, optionally filtered by job_id (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            job_id = request.query.get('job_id')
+            limit = int(request.query.get('limit', 50))
+            runs = store.list_runs(job_id=job_id, limit=limit)
+            return web.json_response({'runs': runs, 'count': len(runs)})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def scheduler_job_adopt(self, request: web.Request) -> web.Response:
+        """Adopt a scheduler run — save its params as bot_backtest (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        job_id = request.match_info['job_id']
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        run_id = body.get('run_id')
+        if not run_id:
+            return web.json_response({'error': 'run_id required'}, status=400)
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            run = store.get_run(run_id)
+            if not run:
+                return web.json_response({'error': 'Run not found'}, status=404)
+            result = run.get('result', {})
+            params = result.get('params', {})
+            metrics = result.get('test_metrics', result.get('metrics', {}))
+            # Persist to trade_journal.db (source='scheduler_optimized')
+            _journal.save_bot_backtest(
+                run['job_id'], params, metrics,
+                source='scheduler_optimized', user_id=run.get('user_id', 'default'))
+            return web.json_response({'status': 'adopted', 'run_id': run_id})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=400)
+
+    async def scheduler_job_reject(self, request: web.Request) -> web.Response:
+        """Reject a scheduler run — mark it as rejected (auth required)."""
+        if not _check_auth(request):
+            return web.json_response({'error': 'Unauthorized'}, status=401)
+        job_id = request.match_info['job_id']
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        run_id = body.get('run_id')
+        if not run_id:
+            return web.json_response({'error': 'run_id required'}, status=400)
+        try:
+            from agent_system.scheduler.store import SchedulerStore
+            store = SchedulerStore()
+            run = store.get_run(run_id)
+            if not run:
+                return web.json_response({'error': 'Run not found'}, status=404)
+            store.finish_run(run_id, status='rejected', result=run.get('result', {}))
+            return web.json_response({'status': 'rejected', 'run_id': run_id})
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=400)
 
     async def _get_options_chain(self, underlying: str) -> List[Dict]:
         """Fetch and normalize an options chain for a given underlying."""
